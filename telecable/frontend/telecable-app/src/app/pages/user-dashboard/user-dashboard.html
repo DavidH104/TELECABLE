@@ -1,0 +1,50 @@
+<div class="container mt-5">
+
+<h2 class="mb-4">Panel de Usuario</h2>
+
+<div class="card">
+
+<div class="card-body">
+
+<h4>{{user.nombre}}</h4>
+
+<p><strong>Contrato:</strong> {{user.contrato}}</p>
+
+<p><strong>Localidad:</strong> {{user.localidad}}</p>
+
+<p><strong>Deuda:</strong> ${{user.deuda}}</p>
+
+<p>
+
+<strong>Estatus:</strong>
+
+<span
+class="badge"
+[ngClass]="{
+'bg-success': user.estatus=='Activo',
+'bg-danger': user.estatus=='Suspendido'
+}">
+
+{{user.estatus}}
+
+</span>
+
+</p>
+
+<div *ngIf="user.deuda>0" class="alert alert-warning">
+
+⚠ Tienes un pago pendiente de ${{user.deuda}}
+
+</div>
+
+<div *ngIf="user.deuda==0" class="alert alert-success">
+
+✔ No tienes pagos pendientes
+
+</div>
+
+</div>
+
+</div>
+
+</div>

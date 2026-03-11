@@ -1,0 +1,59 @@
+<div class="container mt-5">
+
+<h2 class="mb-4 text-center">Sistema Telecable</h2>
+
+<div class="row">
+
+<!-- LOGIN ADMIN -->
+
+<div class="col-md-6">
+
+<h4>Administrador</h4>
+
+<input
+type="text"
+class="form-control mb-2"
+placeholder="Usuario"
+[(ngModel)]="usuario">
+
+<input
+type="password"
+class="form-control mb-2"
+placeholder="Password"
+[(ngModel)]="password">
+
+<button
+class="btn btn-primary w-100"
+(click)="loginAdmin()">
+
+Entrar como Admin
+
+</button>
+
+</div>
+
+<!-- LOGIN USUARIO -->
+
+<div class="col-md-6">
+
+<h4>Usuario</h4>
+
+<input
+type="text"
+class="form-control mb-2"
+placeholder="Número de contrato"
+[(ngModel)]="contrato">
+
+<button
+class="btn btn-success w-100"
+(click)="loginUsuario()">
+
+Entrar como Usuario
+
+</button>
+
+</div>
+
+</div>
+
+</div>
