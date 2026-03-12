@@ -55,8 +55,9 @@ export class Login {
     this.userService.getByContrato(this.contrato).subscribe(
       (user) => {
         if (user) {
-          sessionStorage.setItem('currentUser', JSON.stringify(user));
-          sessionStorage.setItem('isAdmin', 'false');
+          // Usar localStorage para persistencia
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          localStorage.setItem('isAdmin', 'false');
           this.router.navigate(['/user-dashboard']);
         } else {
           alert("Número de contrato no encontrado");

@@ -22,13 +22,19 @@ export class AuthService {
     return isPlatformBrowser(this.platformId);
   }
 
+  // Usar localStorage en lugar de sessionStorage para persistencia
+  private getStorage(): Storage | null {
+    if (!this.isBrowser()) return null;
+    return localStorage;
+  }
+
   loginAdmin(usuario: string, password: string): Observable<boolean> {
     return this.http.post<any>(`${this.api}/admin`, { usuario, password }).pipe(
       tap(res => {
         console.log('Login response:', res);
         if (res && res.admin && this.isBrowser()) {
-          sessionStorage.setItem(this.isAdminKey, 'true');
-          sessionStorage.setItem(this.currentUserKey, JSON.stringify(res.admin));
+          localStorage.setItem(this.isAdminKey, 'true');
+          localStorage.setItem(this.currentUserKey, JSON.stringify(res.admin));
         }
       }),
       map(res => {
@@ -46,8 +52,8 @@ export class AuthService {
     return this.http.post<any>(`${this.api}/user`, { contrato, password }).pipe(
       tap(res => {
         if (res && res.user && this.isBrowser()) {
-          sessionStorage.setItem(this.currentUserKey, JSON.stringify(res.user));
-          sessionStorage.setItem(this.isAdminKey, 'false');
+          localStorage.setItem(this.currentUserKey, JSON.stringify(res.user));
+          localStorage.setItem(this.isAdminKey, 'false');
         }
       })
     );
@@ -55,25 +61,25 @@ export class AuthService {
 
   logout() {
     if (this.isBrowser()) {
-      sessionStorage.removeItem(this.currentUserKey);
-      sessionStorage.removeItem(this.isAdminKey);
+      localStorage.removeItem(this.currentUserKey);
+      localStorage.removeItem(this.isAdminKey);
     }
   }
 
   getCurrentUser(): any | null {
     if (!this.isBrowser()) return null;
-    const user = sessionStorage.getItem(this.currentUserKey);
+    const user = localStorage.getItem(this.currentUserKey);
     return user ? JSON.parse(user) : null;
   }
 
   isAdmin(): boolean {
     if (!this.isBrowser()) return false;
-    return sessionStorage.getItem(this.isAdminKey) === 'true';
+    return localStorage.getItem(this.isAdminKey) === 'true';
   }
 
   isUserLoggedIn(): boolean {
     if (!this.isBrowser()) return false;
-    return !!sessionStorage.getItem(this.currentUserKey);
+    return !!localStorage.getItem(this.currentUserKey);
   }
 
   // Crear nuevo administrador
