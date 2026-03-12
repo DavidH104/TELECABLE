@@ -1,59 +1,68 @@
-<div class="container mt-5">
+<div class="login-container">
+  <div class="login-box">
+    <!-- Logo -->
+    <div class="logo-container">
+      <img src="assets/logo.jpg" alt="TELECABLE" class="logo-img">
+      <p class="logo-slogan">Sistema de Gestión de Clientes</p>
+    </div>
 
-<h2 class="mb-4 text-center">Sistema Telecable</h2>
+    <!-- Botón para cambiar entre Admin y Cliente -->
+    <div class="switch-container">
+      <button 
+        class="btn-switch" 
+        [class.active]="isAdminMode" 
+        (click)="isAdminMode = true">
+        Administrador
+      </button>
+      <button 
+        class="btn-switch" 
+        [class.active]="!isAdminMode" 
+        (click)="isAdminMode = false">
+        Cliente
+      </button>
+    </div>
 
-<div class="row">
+    <!-- Login Administrador -->
+    <div class="card p-4" *ngIf="isAdminMode">
+      <h4 class="mb-3"><i class="bi bi-shield-lock me-2"></i>Acceso Administrador</h4>
+      <div class="mb-3">
+        <label class="form-label">Usuario</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-person"></i></span>
+          <input type="text" class="form-control" placeholder="Usuario" [(ngModel)]="usuario" />
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Contraseña</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-key"></i></span>
+          <input type="password" class="form-control" placeholder="Contraseña" [(ngModel)]="password" (keyup.enter)="login()" />
+        </div>
+      </div>
+      <button class="btn btn-primary w-100 btn-lg" (click)="login()">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Entrar
+      </button>
+    </div>
 
-<!-- LOGIN ADMIN -->
+    <!-- Login Cliente -->
+    <div class="card p-4" *ngIf="!isAdminMode">
+      <h4 class="mb-3"><i class="bi bi-person-vcard me-2"></i>Portal del Cliente</h4>
+      <p class="text-muted mb-3">Ingresa tu número de contrato</p>
+      <div class="mb-3">
+        <label class="form-label">Número de Contrato</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-hash"></i></span>
+          <input type="text" class="form-control" placeholder="Ej: 12345" [(ngModel)]="contrato" (keyup.enter)="loginClient()" />
+        </div>
+      </div>
+      <button class="btn btn-success w-100 btn-lg" (click)="loginClient()">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Consultar Mi Cuenta
+      </button>
+    </div>
 
-<div class="col-md-6">
-
-<h4>Administrador</h4>
-
-<input
-type="text"
-class="form-control mb-2"
-placeholder="Usuario"
-[(ngModel)]="usuario">
-
-<input
-type="password"
-class="form-control mb-2"
-placeholder="Password"
-[(ngModel)]="password">
-
-<button
-class="btn btn-primary w-100"
-(click)="loginAdmin()">
-
-Entrar como Admin
-
-</button>
-
-</div>
-
-<!-- LOGIN USUARIO -->
-
-<div class="col-md-6">
-
-<h4>Usuario</h4>
-
-<input
-type="text"
-class="form-control mb-2"
-placeholder="Número de contrato"
-[(ngModel)]="contrato">
-
-<button
-class="btn btn-success w-100"
-(click)="loginUsuario()">
-
-Entrar como Usuario
-
-</button>
-
-</div>
-
-</div>
-
+    <!-- Pie -->
+    <div class="login-footer">
+      <small>© 2026 TELECABLE - Todos los derechos reservados</small>
+    </div>
+  </div>
 </div>

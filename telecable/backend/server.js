@@ -1,22 +1,50 @@
 const express = require('express');
-const cors = require('cors');
 const mongoose = require('mongoose');
+const cors = require('cors');
+const bcrypt = require('bcryptjs');
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const usersRoutes = require('./routes/users');
+const reportesRoutes = require('./routes/reportes');
+const receiptRoutes = require('./routes/receipts');
+const Admin = require('./models/admin');
 
 const app = express();
 
+// Middleware
 app.use(cors());
-app.use(express.json()); // NECESARIO PARA LEER BODY
+app.use(express.json());
 
-mongoose.connect('mongodb://127.0.0.1:27017/telecable');
+// DB Config
+const dbURI = 'mongodb://localhost:27017/telecable';
 
-mongoose.connection.on('connected',()=>{
-console.log("Mongo conectado");
-});
+// Connect to MongoDB
+mongoose.connect(dbURI)
+  .then(async () => {
+    console.log('MongoDB Connected...');
+    
+    // Crear admin por defecto si no existe
+    const adminExists = await Admin.findOne({ usuario: 'admin' });
+    if (!adminExists) {
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      const newAdmin = new Admin({
+        usuario: 'admin',
+        password: hashedPassword,
+        nombre: 'Administrador'
+      });
+      await newAdmin.save();
+      console.log('Admin creado: usuario=admin, password=admin123');
+    }
+  })
+  .catch(err => console.log(err));
 
-const usersRoutes = require('./routes/users');
+// Use Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/reportes', reportesRoutes);
+app.use('/api/receipts', receiptRoutes);
 
-app.use('/api/users',usersRoutes);
+const port = process.env.PORT || 5000;
 
-app.listen(3000,()=>{
-console.log("Servidor corriendo puerto 3000");
-});
+app.listen(port, () => console.log(`Server running on port ${port}`));

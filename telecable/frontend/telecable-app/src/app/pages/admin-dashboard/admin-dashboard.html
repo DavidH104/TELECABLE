@@ -1,216 +1,334 @@
-<div class="container mt-4">
-
-<h2 class="mb-4">Panel Administrador TELECABLE</h2>
-
-<!-- TARJETAS ESTATUS -->
-
-<div class="row mb-4">
-
-<div class="col-md-3">
-
-<div class="dashboard-card card-activo">
-
-<h5>Activos</h5>
-<h2>{{activos}}</h2>
-
-</div>
-
-</div>
-
-<div class="col-md-3">
-
-<div class="dashboard-card card-inactivo">
-
-<h5>Inactivos</h5>
-<h2>{{inactivos}}</h2>
-
-</div>
-
-</div>
-
-<div class="col-md-3">
-
-<div class="dashboard-card card-suspendido">
-
-<h5>Suspendidos</h5>
-<h2>{{suspendidos}}</h2>
-
-</div>
-
-</div>
-
-<div class="col-md-3">
-
-<div class="dashboard-card card-cancelado">
-
-<h5>Cancelados</h5>
-<h2>{{cancelados}}</h2>
-
-</div>
-
-</div>
-
-</div>
-
-
-<!-- AGREGAR CLIENTE -->
-
-<div class="card mb-4">
-
-<div class="card-header">
-
-<h5>Agregar Cliente</h5>
-
-</div>
-
-<div class="card-body">
-
-<div class="row">
-
-<div class="col-md-2">
-
-<input
-class="form-control"
-placeholder="Número"
-[(ngModel)]="nuevo.numero">
-
-</div>
-
-<div class="col-md-2">
-
-<input
-class="form-control"
-placeholder="Contrato"
-[(ngModel)]="nuevo.contrato">
-
-</div>
-
-<div class="col-md-4">
-
-<input
-class="form-control"
-placeholder="Nombre del suscriptor"
-[(ngModel)]="nuevo.nombre">
-
-</div>
-
-<div class="col-md-2">
-
-<input
-class="form-control"
-placeholder="Localidad"
-[(ngModel)]="nuevo.localidad">
-
-</div>
-
-<div class="col-md-2">
-
-<button
-class="btn btn-primary w-100"
-(click)="agregarUsuario()">
-
-Agregar
-
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-
-<!-- BUSCADOR -->
-
-<input
-class="form-control mb-3"
-placeholder="Buscar cliente..."
-[(ngModel)]="searchText"
-(input)="search()">
-
-
-<!-- TABLA -->
-
-<div class="table-responsive">
-
-<table class="table table-striped table-bordered">
-
-<thead>
-
-<tr>
-
-<th>Número</th>
-<th>Contrato</th>
-<th>Nombre</th>
-<th>Localidad</th>
-<th>Deuda</th>
-<th>Movimiento</th>
-<th>Estatus</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-<tr *ngFor="let user of filteredUsers">
-
-<td>{{user.NUMERO}}</td>
-
-<td>{{user.N?.CONTRATOS}}</td>
-
-<td>{{user['NOMBRE DEL SUSCRIPTOR']}}</td>
-
-<td>{{user.LOCALIDAD}}</td>
-
-<td>
-
-${{user.deuda || 0}}
-
-</td>
-
-<td>
-
-<input
-type="number"
-class="form-control"
-placeholder="+200 o -100"
-[(ngModel)]="user.movimiento">
-
-<button
-class="btn btn-success btn-sm mt-2"
-(click)="actualizarDeuda(user)">
-
-Aplicar
-
-</button>
-
-</td>
-
-<td>
-
-<select
-class="form-control"
-[(ngModel)]="user.estatus"
-(change)="cambiarEstatus(user)">
-
-<option value="Activo">Activo</option>
-<option value="Inactivo">Inactivo</option>
-<option value="Suspendido">Suspendido</option>
-<option value="Cancelado">Cancelado</option>
-
-</select>
-
-</td>
-
-</tr>
-
-</tbody>
-
-</table>
-
-</div>
-
+<div class="container-fluid p-4">
+  <h1 class="mb-4">Panel de Administracion</h1>
+  
+  <!-- Botones de Vista -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <button class="btn w-100" [class.btn-primary]="vistaActual === 'clientes'" [class.btn-outline-primary]="vistaActual !== 'clientes'" (click)="vistaActual = 'clientes'; loadAdmins()">
+        👥 Clientes
+      </button>
+    </div>
+    <div class="col-md-4">
+      <button class="btn w-100" [class.btn-success]="vistaActual === 'agregar'" [class.btn-outline-success]="vistaActual !== 'agregar'" (click)="vistaActual = 'agregar'">
+        ➕ Agregar Usuario
+      </button>
+    </div>
+    <div class="col-md-4">
+      <button class="btn w-100" [class.btn-warning]="vistaActual === 'reportes'" [class.btn-outline-warning]="vistaActual !== 'reportes'" (click)="vistaActual = 'reportes'">
+        📊 Reportes
+      </button>
+    </div>
+  </div>
+
+  <!-- VISTA: CLIENTES (TABLA) -->
+  <div *ngIf="vistaActual === 'clientes'">
+    <!-- Buscador y Stats en misma fila -->
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <input type="text" class="form-control" placeholder="Buscar por nombre, numero, telefono o localidad..." [(ngModel)]="terminoBusqueda" (input)="buscar()">
+      </div>
+      <div class="col-md-2">
+        <div class="card bg-success text-white p-2 text-center">
+          <small>Activos</small>
+          <h5>{{clientesActivos}}</h5>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card bg-warning text-dark p-2 text-center">
+          <small>Suspendidos</small>
+          <h5>{{clientesSuspendidos}}</h5>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card bg-info text-white p-2 text-center">
+          <small>Ingresos</small>
+          <h5>${{ingresosDelMes}}</h5>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA: AGREGAR USUARIO -->
+    <div *ngIf="vistaActual === 'agregar'">
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="card bg-success text-white p-3">
+          <h3>{{clientesActivos}}</h3>
+          <p>Clientes Activos</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card bg-warning text-dark p-3">
+          <h3>{{clientesSuspendidos}}</h3>
+          <p>Clientes Suspendidos</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card bg-info text-white p-3">
+          <h3>${{ingresosDelMes}}</h3>
+          <p>Ingresos del Mes</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario Agregar Cliente -->
+    <div class="card p-4">
+      <h3 class="mb-4">➕ Agregar Nuevo Cliente</h3>
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Nombre Completo</label>
+          <input type="text" class="form-control" placeholder="Nombre" [(ngModel)]="nuevo.nombre">
+        </div>
+        <div class="col-md-3 mb-3">
+          <label class="form-label">Telefono</label>
+          <input type="text" class="form-control" placeholder="Telefono" [(ngModel)]="nuevo.telefono">
+        </div>
+        <div class="col-md-3 mb-3">
+          <label class="form-label">Localidad</label>
+          <input type="text" class="form-control" placeholder="Localidad" [(ngModel)]="nuevo.localidad">
+        </div>
+        <div class="col-md-2 mb-3 d-flex align-items-end">
+          <button class="btn btn-success w-100" (click)="agregar()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA: CLIENTES (TABLA) -->
+  <div *ngIf="vistaActual === 'clientes'">
+
+    <!-- Tabla de Clientes -->
+    <div class="card p-3">
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>Numero</th>
+              <th>Nombre</th>
+              <th>Telefono</th>
+              <th>Localidad</th>
+              <th>Estatus</th>
+              <th>Deuda</th>
+              <th>Acciones</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of usersFiltrados">
+              <td>{{u.numero}}</td>
+              <td>{{u.nombre}}</td>
+              <td>{{u.telefono}}</td>
+              <td>{{u.localidad}}</td>
+              <td>
+                <select class="form-select form-select-sm" [value]="u.estatus" (change)="estatus(u, $event)">
+                  <option value="Activo">Activo</option>
+                  <option value="Suspendido">Suspendido</option>
+                  <option value="Cancelado">Cancelado</option>
+                </select>
+              </td>
+              <td class="text-danger">${{u.deuda}}</td>
+              <td>
+                <div class="input-group input-group-sm">
+                  <input type="number" class="form-control" placeholder="Monto" [(ngModel)]="u.mov" min="0">
+                  <button class="btn btn-outline-primary" (click)="sumar(u)">+</button>
+                  <input type="number" class="form-control" placeholder="Pago" [(ngModel)]="u.pago" min="0">
+                  <button class="btn btn-outline-success" (click)="pagar(u)">$</button>
+                </div>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-danger" (click)="eliminarUsuario(u)" title="Eliminar">🗑️</button>
+              </td>
+            </tr>
+            <tr *ngIf="usersFiltrados.length === 0">
+              <td colspan="8" class="text-center">No se encontraron resultados.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA: REPORTES -->
+  <div *ngIf="vistaActual === 'reportes'">
+    <!-- Historial de Pagos -->
+    <div class="card p-4 mb-4">
+      <h3 class="mb-4">Historial de Pagos</h3>
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead class="table-success">
+            <tr>
+              <th>Cliente</th>
+              <th>Numero</th>
+              <th>Monto Pagado</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let pago of historialPagos">
+              <td>{{ pago.nombre }}</td>
+              <td>{{ pago.numero }}</td>
+              <td class="text-success fw-bold">${{ pago.monto }}</td>
+              <td>{{ pago.fecha }}</td>
+            </tr>
+            <tr *ngIf="historialPagos.length === 0">
+              <td colspan="4" class="text-center">No hay pagos registrados.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Reportes de Clientes -->
+    <div class="card p-4">
+      <h3 class="mb-4">Reportes de Clientes</h3>
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead class="table-warning">
+            <tr>
+              <th>Cliente</th>
+              <th>Numero</th>
+              <th>Reporte</th>
+              <th>Fecha</th>
+              <th>Estatus</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let reporte of reportes">
+              <td>{{ reporte.nombre }}</td>
+              <td>{{ reporte.numero }}</td>
+              <td>{{ reporte.mensaje }}</td>
+              <td>{{ reporte.fecha | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <span class="badge" [class.bg-success]="reporte.estatus === 'atendido'" [class.bg-warning]="reporte.estatus === 'pendiente'">
+                  {{ reporte.estatus === 'atendido' ? 'Atendido' : 'Pendiente' }}
+                </span>
+              </td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <button *ngIf="reporte.estatus === 'pendiente'" 
+                          class="btn btn-success" 
+                          (click)="atenderReporte(reporte)"
+                          title="Marcar como atendido">
+                    Atender
+                  </button>
+                  <button *ngIf="reporte.estatus === 'atendido'" 
+                          class="btn btn-warning" 
+                          (click)="reabrirReporte(reporte)"
+                          title="Marcar como pendiente">
+                    Reabrir
+                  </button>
+                  <button class="btn btn-danger" 
+                          (click)="eliminarReporte(reporte)"
+                          title="Eliminar reporte">
+                    Eliminar
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="reportes.length === 0">
+              <td colspan="6" class="text-center">No hay reportes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA: BUSCAR -->
+  <div *ngIf="vistaActual === 'buscar'">
+    <div class="card p-4">
+      <h3 class="mb-4">Buscar Cliente</h3>
+      <div class="input-group mb-3">
+        <input type="text" class="form-control" placeholder="Buscar por nombre o numero..." [(ngModel)]="searchQuery" (keyup.enter)="buscar()">
+        <button class="btn btn-primary" (click)="buscar()">Buscar</button>
+        <button class="btn btn-secondary" (click)="recargarDatos()">Limpiar</button>
+      </div>
+      
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>Numero</th>
+              <th>Nombre</th>
+              <th>Telefono</th>
+              <th>Localidad</th>
+              <th>Estatus</th>
+              <th>Deuda</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of users">
+              <td>{{u.numero}}</td>
+              <td>{{u.nombre}}</td>
+              <td>{{u.telefono}}</td>
+              <td>{{u.localidad}}</td>
+              <td>{{u.estatus}}</td>
+              <td>${{u.deuda}}</td>
+            </tr>
+            <tr *ngIf="users.length === 0">
+              <td colspan="6" class="text-center">No se encontraron resultados.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA: ADMINISTRADORES -->
+  <div *ngIf="vistaActual === 'admins'">
+    <!-- Agregar Admin -->
+    <div class="mb-3">
+      <button class="btn btn-primary" (click)="mostrarFormularioAdmin = !mostrarFormularioAdmin">
+        {{mostrarFormularioAdmin ? 'Ocultar' : '+ Agregar Administrador'}}
+      </button>
+    </div>
+    
+    <div *ngIf="mostrarFormularioAdmin" class="card p-3 mb-4">
+      <h5>Nuevo Administrador</h5>
+      <div class="row">
+        <div class="col-md-3 mb-2">
+          <input type="text" class="form-control" placeholder="Usuario" [(ngModel)]="nuevoAdmin.usuario">
+        </div>
+        <div class="col-md-3 mb-2">
+          <input type="password" class="form-control" placeholder="Contraseña" [(ngModel)]="nuevoAdmin.password">
+        </div>
+        <div class="col-md-3 mb-2">
+          <input type="text" class="form-control" placeholder="Nombre" [(ngModel)]="nuevoAdmin.nombre">
+        </div>
+        <div class="col-md-3 mb-2">
+          <button class="btn btn-success w-100" (click)="crearAdmin()">Crear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista de Admins -->
+    <div class="card p-3">
+      <h5>Lista de Administradores</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>Usuario</th>
+              <th>Nombre</th>
+              <th>Rol</th>
+              <th>Fecha de Creación</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let admin of admins">
+              <td>{{admin.usuario}}</td>
+              <td>{{admin.nombre || 'N/A'}}</td>
+              <td>{{admin.rol}}</td>
+              <td>{{admin.createdAt | date:'dd/MM/yyyy'}}</td>
+            </tr>
+            <tr *ngIf="admins.length === 0">
+              <td colspan="4" class="text-center">No hay administradores.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>

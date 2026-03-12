@@ -1,0 +1,21 @@
+<div class="container mt-4">
+
+<h2>Enviar Reporte</h2>
+
+<input
+class="form-control mb-3"
+placeholder="ID de usuario"
+[(ngModel)]="userId"
+/>
+
+<textarea
+class="form-control mb-3"
+placeholder="Describe tu problema"
+[(ngModel)]="mensaje"
+></textarea>
+
+<button class="btn btn-primary" (click)="enviarReporte()">
+Enviar Reporte
+</button>
+
+</div>

@@ -3,113 +3,79 @@
 
 /* ===== COLORES TELECABLE ===== */
 
-:root{
-
---azul-oscuro:#0c2d57;
---azul-medio:#1f4e79;
---azul-claro:#2c7fb8;
---azul-suave:#4ea3d8;
-
---fondo:#f4f8fb;
-
+:root {
+  --azul-oscuro: #0B3C6D;
+  --azul-medio: #1E6FB9;
+  --azul-claro: #E7F1FB;
+  --fondo: #E7F1FB;
 }
 
 /* ===== FONDO GENERAL ===== */
 
-body{
-
-background:var(--fondo);
-font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-
+body {
+  background: var(--fondo);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* ===== NAVBAR ===== */
 
-.navbar-telecable{
-
-background:linear-gradient(
-90deg,
-var(--azul-oscuro),
-var(--azul-medio),
-var(--azul-claro)
-);
-
-color:white;
-padding:15px;
-
+.navbar-telecable {
+  background: linear-gradient(
+    90deg,
+    var(--azul-oscuro),
+    var(--azul-medio)
+  );
+  color: white;
+  padding: 15px;
 }
 
 /* ===== TARJETAS DASHBOARD ===== */
 
-.dashboard-card{
-
-border-radius:14px;
-padding:20px;
-color:white;
-text-align:center;
-box-shadow:0 4px 10px rgba(0,0,0,0.1);
-
+.dashboard-card {
+  border-radius: 14px;
+  padding: 20px;
+  color: #333;
+  background-color: #fff;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.card-activo{
-
-background:linear-gradient(135deg,#2c7fb8,#4ea3d8);
-
-}
-
-.card-inactivo{
-
-background:linear-gradient(135deg,#6c757d,#9aa4ad);
-
-}
-
-.card-suspendido{
-
-background:linear-gradient(135deg,#f0ad4e,#f7c873);
-
-}
-
-.card-cancelado{
-
-background:linear-gradient(135deg,#d64545,#e57373);
-
+.card-activo,
+.card-inactivo,
+.card-suspendido,
+.card-cancelado {
+  /* These can have specific icon/border colors later if needed, but background is white */
+  background-color: #fff;
 }
 
 /* ===== TABLAS ===== */
 
-.table thead{
-
-background:var(--azul-oscuro);
-color:white;
-
+.table thead {
+  background: var(--azul-oscuro);
+  color: white;
 }
 
-.table{
-
-border-radius:10px;
-overflow:hidden;
-
+.table {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
 /* ===== BOTONES ===== */
 
-.btn-primary{
-
-background:var(--azul-medio);
-border:none;
-
+.btn-primary {
+  background: var(--azul-medio);
+  border: none;
+  border-radius: 8px;
 }
 
-.btn-primary:hover{
-
-background:var(--azul-oscuro);
-
+.btn-primary:hover {
+  background: var(--azul-oscuro);
 }
 
 /* ===== INPUTS ===== */
 
-input,select{
-
-border-radius:8px !important;
-
+input,
+select {
+  border-radius: 8px !important;
 }

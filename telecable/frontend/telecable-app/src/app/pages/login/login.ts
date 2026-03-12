@@ -1,67 +1,71 @@
-import { Component,ChangeDetectorRef,AfterViewInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-
 import { AuthService } from '../../services/auth.service';
+import { UserService } from '../../services/user.service';
 
 @Component({
-selector:'app-login',
-standalone:true,
-imports:[FormsModule,CommonModule],
-templateUrl:'./login.html',
-styleUrl:'./login.css'
+  selector: 'app-login',
+  standalone: true,
+  imports:[CommonModule, FormsModule],
+  templateUrl:'./login.html',
+  styleUrls: ['./login.css']
 })
+export class Login {
 
-export class Login implements AfterViewInit{
+  usuario='';
+  password='';
+  contrato='';
+  isAdminMode: boolean = true;
 
-usuario=""
-password=""
-contrato=""
+  constructor(
+    private auth: AuthService, 
+    private userService: UserService,
+    private router: Router
+  ){}
 
-constructor(
-private auth:AuthService,
-private router:Router,
-private cd:ChangeDetectorRef
-){}
+  login() {
+    if (!this.usuario.trim() || !this.password.trim()) {
+      alert("Por favor, ingresa usuario y contraseña");
+      return;
+    }
+    
+    this.auth.loginAdmin(this.usuario, this.password).subscribe({
+      next: (success) => {
+        if (success) {
+          this.router.navigate(['/admin-dashboard']);
+        } else {
+          alert("Credenciales incorrectas. Verifica tu usuario y contraseña.");
+        }
+      },
+      error: (err) => {
+        console.error('Error de login:', err);
+        alert("Error de conexión. Verifica que el backend esté corriendo.");
+      }
+    });
+  }
 
-/* LOGIN ADMIN */
+  loginClient() {
+    if (!this.contrato.trim()) {
+      alert("Por favor, ingresa tu número de contrato");
+      return;
+    }
 
-loginAdmin(){
-
-this.auth.loginAdmin({
-
-usuario:this.usuario,
-password:this.password
-
-}).subscribe((res:any)=>{
-
-this.router.navigate(['/admin'])
-
-})
-
-}
-
-/* LOGIN USUARIO */
-
-loginUsuario(){
-
-this.auth.loginUsuario({
-
-contrato:this.contrato
-
-}).subscribe((res:any)=>{
-
-this.router.navigate(['/usuario'])
-
-})
-
-}
-
-ngAfterViewInit(){
-
-this.cd.detectChanges()
-
-}
-
+    this.userService.getByContrato(this.contrato).subscribe(
+      (user) => {
+        if (user) {
+          sessionStorage.setItem('currentUser', JSON.stringify(user));
+          sessionStorage.setItem('isAdmin', 'false');
+          this.router.navigate(['/user-dashboard']);
+        } else {
+          alert("Número de contrato no encontrado");
+        }
+      },
+      (error) => {
+        console.error('Error:', error);
+        alert("Error en el servidor");
+      }
+    );
+  }
 }

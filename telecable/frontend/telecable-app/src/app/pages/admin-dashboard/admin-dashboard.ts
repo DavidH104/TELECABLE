@@ -1,158 +1,374 @@
-import { Component, OnInit } from '@angular/core'
-import { CommonModule } from '@angular/common'
-import { FormsModule } from '@angular/forms'
-import { UserService } from '../../services/user.service'
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { UserService } from '../../services/user.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
-selector:'app-admin-dashboard',
-standalone:true,
-imports:[CommonModule,FormsModule],
-templateUrl:'./admin-dashboard.html'
+  selector: 'app-admin-dashboard',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './admin-dashboard.html',
+  styleUrls: ['./admin-dashboard.css']
 })
+export class AdminDashboard implements OnInit {
 
-export class AdminDashboard implements OnInit{
+  // Datos crudos sin procesar
+  rawData: any[] = [];
+  historialPagos: any[] = [];
+  clientesActivos: number = 0;
+  clientesSuspendidos: number = 0;
+  ingresosDelMes: number = 0;
 
-users:any[]=[]
-filteredUsers:any[]=[]
+  // Campo de búsqueda
+  searchQuery: string = '';
+  terminoBusqueda: string = '';
+  resultadosBusqueda: any[] = [];
+  mostrarFormulario: boolean = false;
+  mostrarFormularioAdmin: boolean = false;
+  private _vistaActual: string = 'clientes';
+  
+  get vistaActual(): string {
+    return this._vistaActual;
+  }
+  
+  set vistaActual(value: string) {
+    this._vistaActual = value;
+  }
+  
+  reportes: any[] = [];
+  admins: any[] = [];
 
-searchText=''
+  nuevo: any = {
+    numero: "",
+    nombre: "",
+    correo: "",
+    telefono: "",
+    direccion: "",
+    localidad: ""
+  };
 
-activos=0
-inactivos=0
-suspendidos=0
-cancelados=0
+  // Nuevo admin
+  nuevoAdmin: any = {
+    usuario: "",
+    password: "",
+    nombre: ""
+  };
 
-nuevo:any={
-numero:'',
-contrato:'',
-nombre:'',
-localidad:''
-}
+  constructor(
+    private userService: UserService,
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
-constructor(private userService:UserService){}
+  ngOnInit() {
+    this.loadData();
+    this.loadReportes();
+  }
 
-ngOnInit(){
-this.cargarUsuarios()
-}
+  loadReportes() {
+    // Cargar reportes de la nueva coleccion
+    this.userService.getReports().subscribe({
+      next: (reportes) => {
+        this.reportes = reportes.map(r => ({
+          _id: r._id,
+          nombre: r.nombreCliente,
+          numero: r.numeroContrato,
+          mensaje: r.mensaje,
+          fecha: r.fecha,
+          estatus: r.estatus
+        }));
+        this.cdr.markForCheck();
+      },
+      error: (err) => console.error('Error al cargar reportes:', err)
+    });
 
-cargarUsuarios(){
+    // Cargar historial de pagos
+    this.userService.getUsers().subscribe({
+      next: (users) => {
+        this.historialPagos = [];
+        for (const u of users) {
+          if (u.recibos && u.recibos.length > 0) {
+            for (const p of u.recibos) {
+              this.historialPagos.push({
+                nombre: u.nombre,
+                numero: u.numero,
+                monto: p.monto,
+                fecha: p.fecha
+              });
+            }
+          }
+        }
+        this.cdr.markForCheck();
+      }
+    });
+  }
 
-this.userService.getUsers().subscribe((data:any)=>{
+  loadData() {
+    this.userService.getUsers().subscribe({
+      next: (data) => {
+        console.log('Recibido:', data);
+        this.rawData = data;
+        this.processData();
+        this.cdr.markForCheck();
+      },
+      error: (err) => console.error(err)
+    });
+  }
 
-this.users=data
-this.filteredUsers=data
+  processData() {
+    this.clientesActivos = 0;
+    this.clientesSuspendidos = 0;
+    this.ingresosDelMes = 0;
+    this.historialPagos = [];
 
-this.calcularEstatus()
+    for (const u of this.rawData) {
+      // Agregar campos de movimiento
+      u.mov = null;
+      u.pago = null;
+      
+      // Contar statuses
+      if (u.estatus === 'Activo') this.clientesActivos++;
+      if (u.estatus === 'Suspendido') this.clientesSuspendidos++;
 
-})
+      // Procesar recibos
+      if (u.recibos && u.recibos.length > 0) {
+        for (const r of u.recibos) {
+          this.historialPagos.push({
+            nombre: u.nombre,
+            fecha: r.fecha,
+            monto: r.monto,
+            userId: u._id,
+            paymentId: r._id
+          });
+        }
+      }
+    }
 
-}
+    // Ordenar pagos por fecha
+    this.historialPagos.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
 
-calcularEstatus(){
+    // Calcular ingresos del mes
+    const hoy = new Date();
+    const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    for (const pago of this.historialPagos) {
+      const fechaPago = new Date(pago.fecha);
+      if (fechaPago >= primerDia) {
+        this.ingresosDelMes += pago.monto;
+      }
+    }
+  }
 
-this.activos=0
-this.inactivos=0
-this.suspendidos=0
-this.cancelados=0
+  get users() {
+    return this.rawData;
+  }
 
-this.users.forEach(u=>{
+  // Recargar datos manteniendo la búsqueda
+  recargarDatos() {
+    if (this.searchQuery.trim()) {
+      this.buscar();
+    } else {
+      this.loadData();
+    }
+  }
 
-if(u.estatus==="Activo") this.activos++
-if(u.estatus==="Inactivo") this.inactivos++
-if(u.estatus==="Suspendido") this.suspendidos++
-if(u.estatus==="Cancelado") this.cancelados++
+  // Generar número de contrato aleatorio
+  generarNumeroContrato(): string {
+    const primeraLetra = this.nuevo.nombre.trim().charAt(0).toUpperCase();
+    const numeroLetra = primeraLetra.charCodeAt(0) - 64; // A=1, B=2, etc.
+    const anio = '26';
+    const aleatorio = Math.floor(10000 + Math.random() * 90000);
+    return `${numeroLetra}${anio}${aleatorio}`;
+  }
 
-})
+  agregar() {
+    if (!this.nuevo.nombre) {
+      alert("Ingresa el nombre del cliente");
+      return;
+    }
 
-}
+    // Auto-generar número de contrato si no existe
+    if (!this.nuevo.numero) {
+      this.nuevo.numero = this.generarNumeroContrato();
+    }
 
-search(){
+    this.userService.addUser(this.nuevo).subscribe({
+      next: () => {
+        this.nuevo = { numero: "", nombre: "", correo: "", telefono: "", direccion: "", localidad: "" };
+        this.mostrarFormulario = false;
+        this.loadData();
+        alert("Cliente agregado correctamente");
+      },
+      error: (err) => {
+        console.error(err);
+        // Mostrar el mensaje de error del backend si existe
+        const mensaje = err.error?.error || "Error al agregar cliente";
+        alert(mensaje);
+      }
+    });
+  }
 
-if(!this.searchText){
-this.filteredUsers=this.users
-return
-}
+  buscar() {
+    // El buscador ahora filtra los usuarios en la vista
+    // Se usa en el getter de users
+  }
 
-let text=this.searchText.toLowerCase()
+  get usersFiltrados() {
+    if (!this.terminoBusqueda || this.terminoBusqueda.trim() === '') {
+      return this.rawData;
+    }
+    const termino = this.terminoBusqueda.toLowerCase();
+    return this.rawData.filter(u => 
+      u.nombre?.toLowerCase().includes(termino) || 
+      u.numero?.toLowerCase().includes(termino) ||
+      u.telefono?.toLowerCase().includes(termino) ||
+      u.localidad?.toLowerCase().includes(termino)
+    );
+  }
 
-this.filteredUsers=this.users.filter(u=>
+  verDetalle(user: any) {
+    alert(`Cliente: ${user.nombre}\nNumero: ${user.numero}\nTelefono: ${user.telefono}\nLocalidad: ${user.localidad}\nEstatus: ${user.estatus}\nDeuda: ${user.deuda}`);
+  }
 
-String(u.NUMERO).toLowerCase().includes(text) ||
+  estatus(user: any, event: any) {
+    const nuevoEstatus = event.target.value;
+    this.userService.updateStatus(user._id, nuevoEstatus).subscribe({
+      next: () => {
+        user.estatus = nuevoEstatus;
+        this.recargarDatos();
+      },
+      error: (err) => {
+        console.error('Error al actualizar estatus:', err);
+        alert('Error al actualizar estatus');
+      }
+    });
+  }
 
-String(u.N?.CONTRATOS).toLowerCase().includes(text) ||
+  eliminarUsuario(user: any) {
+    console.log('Intentando eliminar usuario:', user);
+    console.log('ID del usuario:', user._id);
+    if (confirm(`¿Estás seguro de eliminar al usuario "${user.nombre}"?`)) {
+      this.userService.deleteUser(user._id).subscribe({
+        next: (res) => {
+          console.log('Usuario eliminado:', res);
+          alert('Usuario eliminado correctamente');
+          this.recargarDatos();
+        },
+        error: (err) => {
+          console.error('Error al eliminar usuario:', err);
+          alert('Error al eliminar usuario: ' + (err.error?.error || err.message));
+        }
+      });
+    }
+  }
 
-String(u['NOMBRE DEL SUSCRIPTOR']).toLowerCase().includes(text) ||
+  sumar(user: any) {
+    if (!user.mov || user.mov <= 0) {
+      alert("Monto inválido");
+      return;
+    }
+    // Enviar solo el monto a sumar (el backend ahora suma)
+    this.userService.updateDebt(user._id, Number(user.mov)).subscribe(() => {
+      user.mov = null;
+      this.recargarDatos();
+    });
+  }
 
-String(u.LOCALIDAD).toLowerCase().includes(text)
+  pagar(user: any) {
+    if (!user.pago || user.pago <= 0) {
+      alert("Monto inválido");
+      return;
+    }
+    this.userService.addPaymentRecord(user._id, Number(user.pago)).subscribe(() => {
+      user.pago = null;
+      this.recargarDatos();
+    });
+  }
 
-)
+  generarRecibo(pago: any) {
+    window.open(`http://localhost:5000/api/receipts/${pago.userId}/${pago.paymentId}`, '_blank');
+  }
 
-}
+  // Atender un reporte (marcar como atendido)
+  atenderReporte(reporte: any) {
+    this.userService.markReportAttended(reporte._id).subscribe({
+      next: () => {
+        reporte.estatus = 'atendido';
+        this.cdr.markForCheck();
+        alert('Reporte marcado como atendido');
+      },
+      error: (err) => {
+        console.error('Error al atender reporte:', err);
+        alert('Error al atender reporte');
+      }
+    });
+  }
 
-actualizarDeuda(user:any){
+  // Reabrir un reporte (marcar como pendiente)
+  reabrirReporte(reporte: any) {
+    this.userService.markReportPending(reporte._id).subscribe({
+      next: () => {
+        reporte.estatus = 'pendiente';
+        this.cdr.markForCheck();
+        alert('Reporte marcado como pendiente');
+      },
+      error: (err) => {
+        console.error('Error al reabrir reporte:', err);
+        alert('Error al reabrir reporte');
+      }
+    });
+  }
 
-let actual = user.deuda || 0
-let mov = Number(user.movimiento || 0)
+  // Eliminar un reporte
+  eliminarReporte(reporte: any) {
+    if (!confirm('Estas seguro de eliminar este reporte?')) {
+      return;
+    }
+    this.userService.deleteReport(reporte._id).subscribe({
+      next: () => {
+        this.reportes = this.reportes.filter(r => r._id !== reporte._id);
+        this.cdr.markForCheck();
+        alert('Reporte eliminado');
+      },
+      error: (err) => {
+        console.error('Error al eliminar reporte:', err);
+        alert('Error al eliminar reporte');
+      }
+    });
+  }
 
-let nueva = actual + mov
+  // Cargar lista de admins
+  loadAdmins() {
+    this.authService.listAdmins().subscribe({
+      next: (admins) => {
+        this.admins = admins;
+        this.cdr.markForCheck();
+      },
+      error: (err) => console.error('Error al cargar admins:', err)
+    });
+  }
 
-this.userService
-.actualizarDeuda(user._id,nueva)
-.subscribe(()=>{
+  // Crear nuevo admin
+  crearAdmin() {
+    if (!this.nuevoAdmin.usuario || !this.nuevoAdmin.password) {
+      alert('Usuario y contraseña son requeridos');
+      return;
+    }
 
-user.deuda=nueva
-user.movimiento=''
-
-})
-
-}
-
-cambiarEstatus(user:any){
-
-this.userService
-.actualizarEstatus(user._id,user.estatus)
-.subscribe(()=>{
-
-this.calcularEstatus()
-
-})
-
-}
-
-agregarUsuario(){
-
-let nuevoUsuario={
-
-NUMERO:Number(this.nuevo.numero),
-
-N:{
-CONTRATOS:Number(this.nuevo.contrato)
-},
-
-"NOMBRE DEL SUSCRIPTOR":this.nuevo.nombre,
-
-LOCALIDAD:this.nuevo.localidad,
-
-estatus:"Activo",
-
-deuda:0
-
-}
-
-this.userService.crearUsuario(nuevoUsuario)
-.subscribe(()=>{
-
-this.nuevo={
-numero:'',
-contrato:'',
-nombre:'',
-localidad:''
-}
-
-this.cargarUsuarios()
-
-})
-
-}
-
+    this.authService.createAdmin(
+      this.nuevoAdmin.usuario,
+      this.nuevoAdmin.password,
+      this.nuevoAdmin.nombre
+    ).subscribe({
+      next: () => {
+        alert('Administrador creado exitosamente');
+        this.nuevoAdmin = { usuario: '', password: '', nombre: '' };
+        this.mostrarFormularioAdmin = false;
+        this.loadAdmins();
+      },
+      error: (err) => {
+        alert(err.error?.error || 'Error al crear administrador');
+      }
+    });
+  }
 }

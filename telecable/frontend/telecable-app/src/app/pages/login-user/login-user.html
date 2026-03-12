@@ -1,0 +1,39 @@
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+      <div class="card p-4">
+        <h2 class="text-center mb-4">Portal del Cliente</h2>
+        <p class="text-center text-muted mb-4">Ingrese su número de contrato y contraseña</p>
+        <div class="form-group">
+          <input 
+            type="text"
+            class="form-control mb-3"
+            placeholder="Número de Contrato"
+            [(ngModel)]="contrato"
+            (keyup.enter)="login()"
+          />
+          <input 
+            type="password"
+            class="form-control mb-3"
+            placeholder="Contraseña"
+            [(ngModel)]="password"
+            (keyup.enter)="login()"
+          />
+        </div>
+        <button class="btn btn-primary w-100" (click)="login()">
+          Iniciar Sesión
+        </button>
+        
+        <div class="text-center mt-3">
+          <a href="/registro-password" class="btn btn-link">
+            ¿No tienes contraseña? Crear una
+          </a>
+        </div>
+        
+        <div *ngIf="error" class="alert alert-danger mt-3">
+          {{ error }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

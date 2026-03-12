@@ -1,50 +1,134 @@
-<div class="container mt-5">
+<div class="container mt-4">
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center">
+    <p>Cargando...</p>
+  </div>
 
-<h2 class="mb-4">Panel de Usuario</h2>
+  <!-- User Content -->
+  <div *ngIf="!loading && user">
+    <!-- Encabezado de Bienvenida -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="mb-0">Bienvenido, {{user.nombre}}</h2>
+      <button class="btn btn-sm btn-outline-secondary" (click)="logout()">
+        <i class="bi bi-box-arrow-right me-1"></i> Salir
+      </button>
+    </div>
 
-<div class="card">
+    <!-- Tarjetas de Informacion Principal -->
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="card p-4 h-100">
+          <h4><i class="bi bi-person-badge me-2"></i>Informacion de la Cuenta</h4>
+          <hr>
+          <div class="row">
+            <div class="col-md-6">
+              <p><b>Numero de Cliente:</b><br> {{user.numero}}</p>
+              <p><b>Localidad/Direccion:</b><br> {{user.localidad}}</p>
+            </div>
+            <div class="col-md-6">
+              <p><b>Estatus del Servicio:</b><br>
+                <span class="badge fs-6" [ngClass]="{
+                  'bg-success': user.estatus === 'Activo',
+                  'bg-secondary': user.estatus === 'Inactivo',
+                  'bg-warning text-dark': user.estatus === 'Suspendido',
+                  'bg-danger': user.estatus === 'Cancelado'
+                }">
+                  {{ user.estatus }}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card p-4 h-100 bg-light">
+          <h4><i class="bi bi-currency-dollar me-2"></i>Saldo Pendiente</h4>
+          <hr>
+          <div class="text-center">
+            <p class="fs-1 fw-bold text-danger">${{user.deuda}}</p>
+            <p class="text-muted">Esta es la cantidad pendiente de pago.</p>
+          </div>
+        </div>
+      </div>
+    </div>
 
-<div class="card-body">
+    <!-- Historial de Pagos -->
+    <div class="card p-4 mt-4">
+      <h4><i class="bi bi-clock-history me-2"></i>Historial de Pagos</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped mt-3">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Monto Pagado</th>
+              <th>Recibo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of user.recibos; let i = index">
+              <td>{{r.fecha | date:'longDate'}}</td>
+              <td>{{r.monto | currency}}</td>
+              <td>
+                <button class="btn btn-info btn-sm" (click)="generarRecibo(r, i)">
+                  <i class="bi bi-file-earmark-pdf"></i> Descargar
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="!user.recibos || user.recibos.length === 0">
+              <td colspan="3" class="text-center">No hay pagos registrados.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-<h4>{{user.nombre}}</h4>
+    <!-- Mis Reportes -->
+    <div class="card p-4 mt-4">
+      <h4><i class="bi bi-chat-square-text me-2"></i>Mis Reportes</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped mt-3">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Reporte</th>
+              <th>Estatus</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let reporte of misReportes">
+              <td>{{reporte.fecha | date:'dd/MM/yyyy'}}</td>
+              <td>{{reporte.mensaje}}</td>
+              <td>
+                <span class="badge" [ngClass]="getEstatusBadgeClass(reporte.estatus)">
+                  {{ getEstatusTexto(reporte.estatus) }}
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="misReportes.length === 0">
+              <td colspan="3" class="text-center">No has enviado reportes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-<p><strong>Contrato:</strong> {{user.contrato}}</p>
+    <!-- Reportar un Problema -->
+    <div class="card p-4 mt-4">
+      <h4><i class="bi bi-exclamation-triangle-fill me-2"></i>Reportar un Problema</h4>
+      <p class="text-muted">Tienes algum problema con el servicio? Envianos un reporte.</p>
+      <div class="form-group">
+        <textarea class="form-control" rows="3" placeholder="Describa su problema aqui..." [(ngModel)]="nuevoReporte"></textarea>
+      </div>
+      <button class="btn btn-danger mt-3 align-self-start" (click)="enviarReporte()">
+        <i class="bi bi-send-fill me-1"></i> Enviar Reporte
+      </button>
+    </div>
 
-<p><strong>Localidad:</strong> {{user.localidad}}</p>
+    <!-- Cerrar div de user content -->
+  </div>
 
-<p><strong>Deuda:</strong> ${{user.deuda}}</p>
-
-<p>
-
-<strong>Estatus:</strong>
-
-<span
-class="badge"
-[ngClass]="{
-'bg-success': user.estatus=='Activo',
-'bg-danger': user.estatus=='Suspendido'
-}">
-
-{{user.estatus}}
-
-</span>
-
-</p>
-
-<div *ngIf="user.deuda>0" class="alert alert-warning">
-
-⚠ Tienes un pago pendiente de ${{user.deuda}}
-
-</div>
-
-<div *ngIf="user.deuda==0" class="alert alert-success">
-
-✔ No tienes pagos pendientes
-
-</div>
-
-</div>
-
-</div>
-
+  <!-- Fallback por si no hay usuario -->
+  <div *ngIf="!user" class="alert alert-warning">
+    No se pudo cargar la informacion del usuario. Por favor, <a href="/login">inicie sesion</a> de nuevo.
+  </div>
 </div>
