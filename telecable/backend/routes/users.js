@@ -48,7 +48,6 @@ router.get("/buscar/:query",async(req,res)=>{
 
 const query = req.params.query;
 
-// Buscar por numero o nombre (usando campos originales de MongoDB)
 const users = await User.find({
   $or: [
     { numero: { $regex: query, $options: 'i' } },
@@ -69,7 +68,6 @@ res.json(user)
 
 })
 
-// Obtener usuario por ID
 router.get("/:id",async(req,res)=>{
 
 const user = await User.findById(req.params.id)
@@ -100,7 +98,6 @@ router.put("/deuda/:id",async(req,res)=>{
 
 const user = await User.findById(req.params.id)
 
-// Sumar al deuda existente
 user.deuda = (user.deuda || 0) + req.body.deuda
 
 await user.save()
@@ -124,10 +121,8 @@ monto:req.body.monto
 
 })
 
-// Al registrar un pago, restamos del deuda actual
 user.deuda = Math.max(0, (user.deuda || 0) - req.body.monto);
 
-// Si la deuda queda en 0, activar al usuario
 if (user.deuda === 0) {
   user.estatus = "Activo";
 }
@@ -138,7 +133,6 @@ res.json(user)
 
 })
 
-// Eliminar usuario por ID
 router.delete("/:id", async (req, res) => {
   try {
     console.log('Intentando eliminar usuario con ID:', req.params.id);

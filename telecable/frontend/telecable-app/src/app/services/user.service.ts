@@ -7,24 +7,20 @@ import { Observable } from 'rxjs';
 })
 export class UserService {
 
-  // Base API endpoint
   private api = 'http://localhost:5000/api/users';
   private reportesApi = 'http://localhost:5000/api/reportes';
   private receiptsApi = 'http://localhost:5000/api/receipts';
 
   constructor(private http: HttpClient) {}
 
-  /** Obtener todos los usuarios (para el admin) */
   getUsers(): Observable<any[]> {
     return this.http.get<any[]>(this.api);
   }
 
-  /** Buscar usuarios por número o nombre */
   searchUsers(query: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.api}/buscar/${query}`);
   }
 
-  /** Obtener un usuario por ID */
   getUserById(id: string): Observable<any> {
     return this.http.get<any>(`${this.api}/${id}`);
   }

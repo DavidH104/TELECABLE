@@ -5,20 +5,18 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const rateLimit = require('express-rate-limit');
 
-// Rate limiter to prevent brute force attacks
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 5,
   message: { error: "Demasiados intentos. Intenta de nuevo en 15 minutos." }
 });
 
 const codeLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000,
   max: 3,
   message: { error: "Demasiadas solicitudes. Intenta de nuevo en una hora." }
 });
 
-// Función para generar código aleatorio
 function generarCodigo() {
   return Math.floor(100000 + Math.random() * 900000).toString(); // Código de 6 dígitos
 }
@@ -50,7 +48,6 @@ if (!admin) {
 
 console.log('Admin found, checking password...');
 
-// Verificar contraseña con hash
 const isPasswordValid = await bcrypt.compare(password, admin.password);
 
 console.log('Password valid:', isPasswordValid);
@@ -227,7 +224,6 @@ if (!user) {
   });
 }
 
-// Verificar si tiene contraseña establecida
 if (!user.password) {
   return res.status(401).json({
     necesitaPassword: true,
@@ -235,7 +231,6 @@ if (!user.password) {
   });
 }
 
-// Verificar contraseña con hash seguro
 const isPasswordValid = await bcrypt.compare(password, user.password);
 
 if (!isPasswordValid) {
@@ -244,7 +239,6 @@ if (!isPasswordValid) {
   });
 }
 
-// No retornar la contraseña en la respuesta
 const userResponse = {
   _id: user._id,
   numero: user.numero,

@@ -2,7 +2,6 @@ const express = require("express")
 const router = express.Router()
 const Report = require("../models/report")
 
-// Crear un nuevo reporte
 router.post("/", async (req, res) => {
   try {
     const { usuarioId, nombreCliente, numeroContrato, mensaje } = req.body
@@ -23,7 +22,6 @@ router.post("/", async (req, res) => {
   }
 })
 
-// Obtener todos los reportes (para el admin)
 router.get("/", async (req, res) => {
   try {
     const reportes = await Report.find().sort({ fecha: -1 })
@@ -33,7 +31,6 @@ router.get("/", async (req, res) => {
   }
 })
 
-// Obtener reportes de un usuario especifico
 router.get("/usuario/:usuarioId", async (req, res) => {
   try {
     const reportes = await Report.find({ usuarioId: req.params.usuarioId }).sort({ fecha: -1 })
@@ -43,7 +40,6 @@ router.get("/usuario/:usuarioId", async (req, res) => {
   }
 })
 
-// Marcar reporte como atendido
 router.put("/:id/atendido", async (req, res) => {
   try {
     const report = await Report.findByIdAndUpdate(
@@ -60,7 +56,6 @@ router.put("/:id/atendido", async (req, res) => {
   }
 })
 
-// Marcar reporte como pendiente (reabrir)
 router.put("/:id/pendiente", async (req, res) => {
   try {
     const report = await Report.findByIdAndUpdate(
@@ -77,7 +72,6 @@ router.put("/:id/pendiente", async (req, res) => {
   }
 })
 
-// Eliminar reporte
 router.delete("/:id", async (req, res) => {
   try {
     await Report.findByIdAndDelete(req.params.id)
@@ -87,7 +81,6 @@ router.delete("/:id", async (req, res) => {
   }
 })
 
-// Eliminar reportes antiguos (mas de 30 dias) - manual execution
 router.delete("/cleanup/antiguos", async (req, res) => {
   try {
     const fechaLimite = new Date()

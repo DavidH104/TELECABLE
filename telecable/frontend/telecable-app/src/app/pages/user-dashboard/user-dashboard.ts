@@ -17,6 +17,7 @@ export class UserDashboard implements OnInit {
   nuevoReporte: string = '';
   loading: boolean = true;
   misReportes: any[] = [];
+  vistaActual: string = 'cuenta'; // Para la navegacion
 
   constructor(
     private authService: AuthService,

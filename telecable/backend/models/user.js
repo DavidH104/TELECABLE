@@ -1,5 +1,39 @@
 const mongoose = require("mongoose")
 
+const reporteSchema = new mongoose.Schema({
+  tipo: {
+    type: String,
+    enum: ['Falla', 'Instalacion', 'Retiro', 'Pago', 'Otro'],
+    default: 'Falla'
+  },
+  mensaje: {
+    type: String,
+    required: true
+  },
+  fecha: {
+    type: Date,
+    default: Date.now
+  },
+  estatus: {
+    type: String,
+    enum: ['Pendiente', 'En Revision', 'Asignado', 'En Proceso', 'Completado', 'Cancelado'],
+    default: 'Pendiente'
+  },
+  prioridad: {
+    type: String,
+    enum: ['Baja', 'Normal', 'Alta', 'Urgente'],
+    default: 'Normal'
+  },
+  tecnicoAsignado: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Technician'
+  },
+  tecnicoNombre: String,
+  notasTecnico: String,
+  fechaCompletado: Date,
+  direccion: String
+});
+
 const userSchema = new mongoose.Schema({
 
   numero: {
@@ -14,7 +48,6 @@ const userSchema = new mongoose.Schema({
 
   localidad: String,
 
-  // Nueva funcionalidad de contraseña
   password: {
     type: String,
     default: null
@@ -38,7 +71,10 @@ const userSchema = new mongoose.Schema({
     default: 0
   },
 
-  // Campos originales de MongoDB (para referencia)
+  direccion: String,
+
+  reportes: [reporteSchema],
+
   'NOMBRE DEL SUSCRIPTOR': String,
   'LOCALIDAD': String,
   NUMERO: Number
@@ -47,23 +83,18 @@ const userSchema = new mongoose.Schema({
   collection:'clientes'
 })
 
-// Transformar la respuesta para que el frontend reciba los campos en minúsculas
 userSchema.set('toJSON', {
   virtuals: true,
   transform: function (doc, ret) {
-    // Si tiene NOMBRE DEL SUSCRIPTOR, usarla como nombre
     if (ret['NOMBRE DEL SUSCRIPTOR'] && !ret.nombre) {
       ret.nombre = ret['NOMBRE DEL SUSCRIPTOR'];
     }
-    // Si tiene LOCALIDAD, usarla como localidad
     if (ret.LOCALIDAD && !ret.localidad) {
       ret.localidad = ret.LOCALIDAD;
     }
-    // Si tiene NUMERO (number), convertir a string
     if (ret.NUMERO && !ret.numero) {
       ret.numero = String(ret.NUMERO);
     }
-    // Eliminar campos originales
     delete ret['NOMBRE DEL SUSCRIPTOR'];
     delete ret['LOCALIDAD'];
     delete ret.NUMERO;

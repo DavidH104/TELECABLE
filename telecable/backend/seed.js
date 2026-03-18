@@ -1,9 +1,7 @@
 const mongoose = require('mongoose');
 
-// Conexión a MongoDB
 const dbURI = 'mongodb://localhost:27017/telecable';
 
-// Definir esquema de usuario
 const userSchema = new mongoose.Schema({
   nombre: { type: String, required: true },
   contrato: { type: Number, required: true, unique: true },
@@ -22,7 +20,6 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-// Datos de ejemplo
 const users = [
   {
     nombre: "Juan Pérez García",

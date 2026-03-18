@@ -3,17 +3,22 @@
   
   <!-- Botones de Vista -->
   <div class="row mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
       <button class="btn w-100" [class.btn-primary]="vistaActual === 'clientes'" [class.btn-outline-primary]="vistaActual !== 'clientes'" (click)="vistaActual = 'clientes'; loadAdmins()">
         👥 Clientes
       </button>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
       <button class="btn w-100" [class.btn-success]="vistaActual === 'agregar'" [class.btn-outline-success]="vistaActual !== 'agregar'" (click)="vistaActual = 'agregar'">
         ➕ Agregar Usuario
       </button>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
+      <button class="btn w-100" [class.btn-info]="vistaActual === 'tecnicos'" [class.btn-outline-info]="vistaActual !== 'tecnicos'" (click)="vistaActual = 'tecnicos'; loadTechnicians()">
+        🔧 Técnicos
+      </button>
+    </div>
+    <div class="col-md-3">
       <button class="btn w-100" [class.btn-warning]="vistaActual === 'reportes'" [class.btn-outline-warning]="vistaActual !== 'reportes'" (click)="vistaActual = 'reportes'">
         📊 Reportes
       </button>
@@ -229,6 +234,105 @@
             </tr>
             <tr *ngIf="reportes.length === 0">
               <td colspan="6" class="text-center">No hay reportes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA: TÉCNICOS -->
+  <div *ngIf="vistaActual === 'tecnicos'">
+    <div class="card p-4">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0"><i class="bi bi-tools me-2"></i>Gestión de Técnicos</h3>
+        <button class="btn btn-success" (click)="mostrarFormularioTecnico = true">
+          <i class="bi bi-plus-circle me-1"></i> Nuevo Técnico
+        </button>
+      </div>
+
+      <!-- Formulario nuevo técnico -->
+      <div class="card bg-light p-3 mb-4" *ngIf="mostrarFormularioTecnico">
+        <h5>Nuevo Técnico</h5>
+        <div class="row">
+          <div class="col-md-3 mb-2">
+            <input type="text" class="form-control" placeholder="Usuario" [(ngModel)]="nuevoTecnico.username">
+          </div>
+          <div class="col-md-3 mb-2">
+            <input type="password" class="form-control" placeholder="Contraseña" [(ngModel)]="nuevoTecnico.password">
+          </div>
+          <div class="col-md-3 mb-2">
+            <input type="text" class="form-control" placeholder="Nombre completo" [(ngModel)]="nuevoTecnico.nombre">
+          </div>
+          <div class="col-md-3 mb-2">
+            <select class="form-select" [(ngModel)]="nuevoTecnico.especialidad">
+              <option value="Todas">Todas</option>
+              <option value="Instalaciones">Instalaciones</option>
+              <option value="Reparaciones">Reparaciones</option>
+              <option value="General">General</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-3 mb-2">
+            <input type="text" class="form-control" placeholder="Teléfono" [(ngModel)]="nuevoTecnico.telefono">
+          </div>
+          <div class="col-md-3 mb-2">
+            <input type="email" class="form-control" placeholder="Email" [(ngModel)]="nuevoTecnico.email">
+          </div>
+          <div class="col-md-6 text-end">
+            <button class="btn btn-secondary me-2" (click)="mostrarFormularioTecnico = false">Cancelar</button>
+            <button class="btn btn-success" (click)="crearTecnico()">Guardar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de técnicos -->
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead class="table-info">
+            <tr>
+              <th>Usuario</th>
+              <th>Nombre</th>
+              <th>Teléfono</th>
+              <th>Email</th>
+              <th>Especialidad</th>
+              <th>Estatus</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let tech of tecnicos">
+              <td>{{ tech.username }}</td>
+              <td>{{ tech.nombre }}</td>
+              <td>{{ tech.telefono || 'N/A' }}</td>
+              <td>{{ tech.email || 'N/A' }}</td>
+              <td>{{ tech.especialidad }}</td>
+              <td>
+                <span class="badge" [class.bg-success]="tech.activo" [class.bg-secondary]="!tech.activo">
+                  {{ tech.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-warning" (click)="editarTecnico(tech)" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button class="btn" 
+                          [class.btn-success]="!tech.activo" 
+                          [class.btn-danger]="tech.activo"
+                          (click)="toggleTecnico(tech)"
+                          [title]="tech.activo ? 'Desactivar' : 'Activar'">
+                    <i class="bi" [class.bi-check-circle]="!tech.activo" [class.bi-x-circle]="tech.activo"></i>
+                  </button>
+                  <button class="btn btn-danger" (click)="eliminarTecnico(tech)" title="Eliminar">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="tecnicos.length === 0">
+              <td colspan="7" class="text-center">No hay técnicos registrados.</td>
             </tr>
           </tbody>
         </table>

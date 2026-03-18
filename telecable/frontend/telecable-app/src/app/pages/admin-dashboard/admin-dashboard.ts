@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserService } from '../../services/user.service';
 import { AuthService } from '../../services/auth.service';
+import { TechnicianService } from '../../services/technician.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -55,9 +56,22 @@ export class AdminDashboard implements OnInit {
     nombre: ""
   };
 
+  // Técnicos
+  tecnicos: any[] = [];
+  mostrarFormularioTecnico: boolean = false;
+  nuevoTecnico: any = {
+    username: '',
+    password: '',
+    nombre: '',
+    telefono: '',
+    email: '',
+    especialidad: 'Todas'
+  };
+
   constructor(
     private userService: UserService,
     private authService: AuthService,
+    private technicianService: TechnicianService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -369,6 +383,86 @@ export class AdminDashboard implements OnInit {
       error: (err) => {
         alert(err.error?.error || 'Error al crear administrador');
       }
+    });
+  }
+
+  // Cargar lista de técnicos
+  loadTechnicians() {
+    this.technicianService.getTechnicians().subscribe({
+      next: (tecnicos) => {
+        this.tecnicos = tecnicos;
+        this.cdr.markForCheck();
+      },
+      error: (err) => console.error('Error al cargar técnicos:', err)
+    });
+  }
+
+  // Crear nuevo técnico
+  crearTecnico() {
+    if (!this.nuevoTecnico.username || !this.nuevoTecnico.password || !this.nuevoTecnico.nombre) {
+      alert('Usuario, contraseña y nombre son requeridos');
+      return;
+    }
+
+    this.technicianService.createTechnician(this.nuevoTecnico).subscribe({
+      next: () => {
+        alert('Técnico creado exitosamente');
+        this.nuevoTecnico = { username: '', password: '', nombre: '', telefono: '', email: '', especialidad: 'Todas' };
+        this.mostrarFormularioTecnico = false;
+        this.loadTechnicians();
+      },
+      error: (err) => {
+        alert(err.error?.mensaje || 'Error al crear técnico');
+      }
+    });
+  }
+
+  // Editar técnico
+  editarTecnico(tech: any) {
+    const nuevoNombre = prompt('Nombre del técnico:', tech.nombre);
+    if (nuevoNombre === null) return;
+    
+    const nuevaEspecialidad = prompt('Especialidad (Instalaciones, Reparaciones, General, Todas):', tech.especialidad);
+    if (nuevaEspecialidad === null) return;
+
+    this.technicianService.updateTechnician(tech._id, {
+      nombre: nuevoNombre,
+      especialidad: nuevaEspecialidad
+    }).subscribe({
+      next: () => {
+        alert('Técnico actualizado');
+        this.loadTechnicians();
+      },
+      error: () => alert('Error al actualizar técnico')
+    });
+  }
+
+  // Activar/desactivar técnico
+  toggleTecnico(tech: any) {
+    const accion = tech.activo ? 'desactivar' : 'activar';
+    if (!confirm(`¿Deseas ${accion} este técnico?`)) return;
+
+    this.technicianService.updateTechnician(tech._id, {
+      activo: !tech.activo
+    }).subscribe({
+      next: () => {
+        alert(`Técnico ${accion === 'activar' ? 'activado' : 'desactivado'}`);
+        this.loadTechnicians();
+      },
+      error: () => alert('Error al actualizar técnico')
+    });
+  }
+
+  // Eliminar técnico
+  eliminarTecnico(tech: any) {
+    if (!confirm(`¿Estás seguro de eliminar al técnico "${tech.nombre}"?`)) return;
+
+    this.technicianService.deleteTechnician(tech._id).subscribe({
+      next: () => {
+        alert('Técnico eliminado');
+        this.loadTechnicians();
+      },
+      error: () => alert('Error al eliminar técnico')
     });
   }
 }

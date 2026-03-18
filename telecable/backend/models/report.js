@@ -24,7 +24,7 @@ const reportSchema = new mongoose.Schema({
   },
   estatus: {
     type: String,
-    default: 'pendiente' // pendiente, atendido
+    default: 'pendiente'
   },
   fechaAtencion: {
     type: Date,
@@ -34,7 +34,6 @@ const reportSchema = new mongoose.Schema({
   collection: 'reportes'
 })
 
-// Middleware para auto-eliminar reportes después de 30 días
 reportSchema.index({ fecha: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 })
 
 module.exports = mongoose.model("Report", reportSchema)

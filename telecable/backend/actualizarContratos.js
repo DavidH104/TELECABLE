@@ -1,9 +1,7 @@
 const mongoose = require('mongoose');
 
-// Conexión a MongoDB
 const dbURI = 'mongodb://localhost:27017/telecable';
 
-// Definir esquema de usuario
 const userSchema = new mongoose.Schema({
   nombre: { type: String, required: true },
   numero: { type: String, required: true, unique: true },
@@ -25,26 +23,19 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-// Función para convertir letra a número (a=1, b=2, ..., z=26)
 function letraANumero(letra) {
   const letraLower = letra.toLowerCase();
   return letraLower.charCodeAt(0) - 96;
 }
 
-// Función para generar número de contrato único
 function generarNumeroContrato(nombre) {
-  // Obtener primera letra del nombre
   const primeraLetra = nombre.trim().charAt(0).toUpperCase();
   const numeroLetra = letraANumero(primeraLetra);
   
-  // Año actual (26 = 2026)
   const anio = '26';
   
-  // Generar números aleatorios (4 dígitos)
   const aleatorio = Math.floor(1000 + Math.random() * 9000);
   
-  // Combinar: numeroLetra + anio + aleatorio
-  // Ejemplo: J (10) + 26 + 1234 = 10261234
   return `${numeroLetra}${anio}${aleatorio}`;
 }
 
