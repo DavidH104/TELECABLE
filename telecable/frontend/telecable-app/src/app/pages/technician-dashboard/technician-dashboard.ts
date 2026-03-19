@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -32,7 +32,8 @@ export class TechnicianDashboardComponent implements OnInit {
 
   constructor(
     private technicianService: TechnicianService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -55,10 +56,12 @@ export class TechnicianDashboardComponent implements OnInit {
       next: (data) => {
         this.misReportes = data;
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.misReportes = [];
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
 
@@ -67,10 +70,12 @@ export class TechnicianDashboardComponent implements OnInit {
       next: (data) => {
         this.todosReportes = data;
         this.reportesFiltrados = data;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.todosReportes = [];
         this.reportesFiltrados = [];
+        this.cdr.detectChanges();
       }
     });
   }

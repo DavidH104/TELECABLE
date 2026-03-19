@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { UserService } from '../../services/user.service';
 import { AuthService } from '../../services/auth.service';
 import { TechnicianService } from '../../services/technician.service';
+import { ReportService } from '../../services/report.service';
+import { PreregistroService } from '../../services/preregistro.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -68,10 +70,23 @@ export class AdminDashboard implements OnInit {
     especialidad: 'Todas'
   };
 
+  // Solicitudes de registro
+  solicitudesPendientes: number = 0;
+  solicitudesRegistro: any[] = [];
+  preregistros: any[] = [];
+  preregistrosPendientes: number = 0;
+  preregistroSeleccionado: any = null;
+  nuevoNumeroContrato: string = '';
+  reportesParaAsignar: any[] = [];
+  reporteSeleccionado: any = null;
+  tecnicoSeleccionado: string = '';
+
   constructor(
     private userService: UserService,
     private authService: AuthService,
     private technicianService: TechnicianService,
+    private reportService: ReportService,
+    private preregistroService: PreregistroService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -419,21 +434,35 @@ export class AdminDashboard implements OnInit {
 
   // Editar técnico
   editarTecnico(tech: any) {
+    const nuevoUsername = prompt('Usuario:', tech.username);
+    if (nuevoUsername === null) return;
+    
     const nuevoNombre = prompt('Nombre del técnico:', tech.nombre);
     if (nuevoNombre === null) return;
     
     const nuevaEspecialidad = prompt('Especialidad (Instalaciones, Reparaciones, General, Todas):', tech.especialidad);
     if (nuevaEspecialidad === null) return;
 
-    this.technicianService.updateTechnician(tech._id, {
+    const nuevaPassword = prompt('Nueva contraseña (dejar vacío para mantener la actual):');
+    // Si el usuario no quiere cambiar la contraseña, no enviamos el campo
+
+    const datosActualizar: any = {
+      username: nuevoUsername,
       nombre: nuevoNombre,
       especialidad: nuevaEspecialidad
-    }).subscribe({
+    };
+
+    // Solo agregamos password si el usuario proporcionó una nueva
+    if (nuevaPassword && nuevaPassword.trim() !== '') {
+      datosActualizar.password = nuevaPassword;
+    }
+
+    this.technicianService.updateTechnician(tech._id, datosActualizar).subscribe({
       next: () => {
         alert('Técnico actualizado');
         this.loadTechnicians();
       },
-      error: () => alert('Error al actualizar técnico')
+      error: (err) => alert(err.error?.mensaje || 'Error al actualizar técnico')
     });
   }
 
@@ -463,6 +492,177 @@ export class AdminDashboard implements OnInit {
         this.loadTechnicians();
       },
       error: () => alert('Error al eliminar técnico')
+    });
+  }
+
+  // ==================== SOLICITUDES DE REGISTRO ====================
+  
+  // Cargar solicitudes de registro pendientes
+  loadSolicitudes() {
+    this.authService.getSolicitudes().subscribe({
+      next: (solicitudes) => {
+        this.solicitudesRegistro = solicitudes;
+        this.solicitudesPendientes = solicitudes.filter((s: any) => s.estado === 'pendiente').length;
+        this.cdr.markForCheck();
+      },
+      error: (err) => console.error('Error al cargar solicitudes:', err)
+    });
+  }
+
+  // Aprobar solicitud de registro
+  aprobarSolicitud(solicitud: any) {
+    if (!confirm(`¿Aprobar la solicitud de ${solicitud.nombre}?`)) return;
+    
+    this.authService.aprobarSolicitud(solicitud._id).subscribe({
+      next: () => {
+        alert('Solicitud aprobada. El usuario podrá iniciar sesión.');
+        this.loadSolicitudes();
+      },
+      error: (err) => alert(err.error?.error || 'Error al aprobar solicitud')
+    });
+  }
+
+  // Rechazar solicitud de registro
+  rechazarSolicitud(solicitud: any) {
+    if (!confirm(`¿Rechazar la solicitud de ${solicitud.nombre}?`)) return;
+    
+    this.authService.rechazarSolicitud(solicitud._id).subscribe({
+      next: () => {
+        alert('Solicitud rechazada');
+        this.loadSolicitudes();
+      },
+      error: (err) => alert(err.error?.error || 'Error al rechazar solicitud')
+    });
+  }
+
+  // ==================== ASIGNAR REPORTES A TÉCNICOS ====================
+  
+  // Cargar reportes para asignar
+  loadReportesParaAsignar() {
+    this.reportService.getReportes().subscribe({
+      next: (reportes) => {
+        this.reportesParaAsignar = reportes.map((r: any) => ({
+          ...r,
+          clienteId: r.usuarioId
+        })).filter((r: any) => 
+          !r.tecnicoAsignado && r.estatus !== 'completado' && r.estatus !== 'cancelado'
+        );
+        this.cdr.markForCheck();
+      },
+      error: (err) => console.error('Error al cargar reportes:', err)
+    });
+  }
+
+  // Asignar reporte a técnico
+  asignarReporte(reporte: any) {
+    if (!this.tecnicoSeleccionado) {
+      alert('Selecciona un técnico');
+      return;
+    }
+    
+    const tecnico = this.tecnicos.find(t => t._id === this.tecnicoSeleccionado);
+    if (!tecnico) return;
+
+    if (!confirm(`¿Asignar este reporte a ${tecnico.nombre}?`)) return;
+
+    this.reportService.asignarTecnico(
+      reporte._id,
+      tecnico._id,
+      tecnico.nombre,
+      reporte.clienteId
+    ).subscribe({
+      next: () => {
+        alert('Reporte asignado y enviado al técnico');
+        this.reporteSeleccionado = null;
+        this.tecnicoSeleccionado = '';
+        this.loadReportesParaAsignar();
+      },
+      error: (err) => alert(err.error?.error || 'Error al asignar reporte')
+    });
+  }
+
+  // Enviar reporte a técnico
+  enviarReporteATecnico(reporte: any) {
+    if (!reporte.tecnicoAsignado) {
+      alert('El reporte no tiene técnico asignado');
+      return;
+    }
+    
+    if (!confirm(`¿Enviar reporte a ${reporte.tecnicoNombre}?`)) return;
+
+    this.reportService.updateReporte(reporte._id, {
+      enviadoATecnico: true,
+      clienteId: reporte.usuarioId
+    }).subscribe({
+      next: () => {
+        alert('Reporte enviado al técnico');
+        this.loadReportesParaAsignar();
+      },
+      error: (err) => alert(err.error?.error || 'Error al enviar reporte')
+    });
+  }
+
+  // Editar cliente
+  editarCliente(cliente: any) {
+    const nuevoNombre = prompt('Nombre:', cliente.nombre);
+    const nuevoTelefono = prompt('Teléfono:', cliente.telefono);
+    const nuevaLocalidad = prompt('Localidad:', cliente.localidad);
+    const nuevaDireccion = prompt('Dirección:', cliente.direccion);
+    const nuevoEstatus = prompt('Estatus (Activo/Suspendido):', cliente.estatus);
+
+    if (nuevoNombre === null || nuevoTelefono === null) return;
+
+    this.userService.updateUser(cliente._id, {
+      nombre: nuevoNombre,
+      telefono: nuevoTelefono,
+      localidad: nuevaLocalidad,
+      direccion: nuevaDireccion,
+      estatus: nuevoEstatus
+    }).subscribe({
+      next: () => {
+        alert('Cliente actualizado');
+        this.loadData();
+        this.buscar();
+      },
+      error: (err) => alert(err.error?.error || 'Error al actualizar cliente')
+    });
+  }
+
+  // ==================== PRE-REGISTROS ====================
+  
+  loadPreregistros() {
+    this.preregistroService.getPreregistros().subscribe({
+      next: (preregistros) => {
+        this.preregistros = preregistros;
+        this.preregistrosPendientes = preregistros.filter((p: any) => p.estado === 'pendiente').length;
+        this.cdr.markForCheck();
+      },
+      error: (err) => console.error('Error al cargar pre-registros:', err)
+    });
+  }
+
+  aprobarPreregistro(preregistro: any) {
+    if (!confirm(`¿Aprobar el pre-registro de ${preregistro.nombre}?`)) return;
+
+    this.preregistroService.aprobarPreregistro(preregistro._id, {}).subscribe({
+      next: (res) => {
+        alert(`Pre-registro aprobado.\nContrato: ${res.usuario.numero}\nPassword: ${res.usuario.passwordTemporal}`);
+        this.loadPreregistros();
+        this.loadData();
+      },
+      error: (err) => alert(err.error?.error || 'Error al aprobar pre-registro')
+    });
+  }
+
+  rechazarPreregistro(preregistro: any) {
+    if (!confirm(`¿Rechazar el pre-registro de ${preregistro.nombre}?`)) return;
+
+    this.preregistroService.rechazarPreregistro(preregistro._id, {}).subscribe({
+      next: () => {
+        alert('Pre-registro rechazado');
+        this.loadPreregistros();
+      },
+      error: (err) => alert(err.error?.error || 'Error al rechazar pre-registro')
     });
   }
 }

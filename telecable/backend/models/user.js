@@ -34,6 +34,13 @@ const reporteSchema = new mongoose.Schema({
   direccion: String
 });
 
+const mensajeAdminSchema = new mongoose.Schema({
+  titulo: String,
+  mensaje: String,
+  fecha: { type: Date, default: Date.now },
+  activo: { type: Boolean, default: true }
+});
+
 const userSchema = new mongoose.Schema({
 
   numero: {
@@ -75,9 +82,21 @@ const userSchema = new mongoose.Schema({
 
   reportes: [reporteSchema],
 
+  mensajesAdmin: [mensajeAdminSchema],
+
   'NOMBRE DEL SUSCRIPTOR': String,
   'LOCALIDAD': String,
-  NUMERO: Number
+  NUMERO: Number,
+
+  solicitudRegistro: {
+    tipo: { type: String, default: 'nuevo_usuario' },
+    estado: { type: String, enum: ['pendiente', 'aprobado', 'rechazado'], default: null },
+    fecha: { type: Date, default: null },
+    nombre: String,
+    telefono: String,
+    direccion: String,
+    observaciones: String
+  }
 
 },{
   collection:'clientes'

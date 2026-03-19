@@ -3,24 +3,41 @@
   
   <!-- Botones de Vista -->
   <div class="row mb-4">
-    <div class="col-md-3">
+    <div class="col-md-2">
       <button class="btn w-100" [class.btn-primary]="vistaActual === 'clientes'" [class.btn-outline-primary]="vistaActual !== 'clientes'" (click)="vistaActual = 'clientes'; loadAdmins()">
         👥 Clientes
       </button>
     </div>
-    <div class="col-md-3">
-      <button class="btn w-100" [class.btn-success]="vistaActual === 'agregar'" [class.btn-outline-success]="vistaActual !== 'agregar'" (click)="vistaActual = 'agregar'">
-        ➕ Agregar Usuario
+    <div class="col-md-2">
+      <button class="btn w-100" [class.btn-secondary]="vistaActual === 'solicitudes'" [class.btn-outline-secondary]="vistaActual !== 'solicitudes'" (click)="vistaActual = 'solicitudes'; loadSolicitudes()">
+        📝 Solicitudes
+        <span class="badge bg-danger" *ngIf="solicitudesPendientes > 0">{{solicitudesPendientes}}</span>
       </button>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
+      <button class="btn w-100" [class.btn-success]="vistaActual === 'agregar'" [class.btn-outline-success]="vistaActual !== 'agregar'" (click)="vistaActual = 'agregar'">
+        ➕ Agregar
+      </button>
+    </div>
+    <div class="col-md-2">
       <button class="btn w-100" [class.btn-info]="vistaActual === 'tecnicos'" [class.btn-outline-info]="vistaActual !== 'tecnicos'" (click)="vistaActual = 'tecnicos'; loadTechnicians()">
         🔧 Técnicos
       </button>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
       <button class="btn w-100" [class.btn-warning]="vistaActual === 'reportes'" [class.btn-outline-warning]="vistaActual !== 'reportes'" (click)="vistaActual = 'reportes'">
-        📊 Reportes
+        📋 Reportes
+      </button>
+    </div>
+    <div class="col-md-2">
+      <button class="btn w-100" [class.btn-danger]="vistaActual === 'asignar'" [class.btn-outline-danger]="vistaActual !== 'asignar'" (click)="vistaActual = 'asignar'; loadReportesParaAsignar()">
+        🎯 Asignar
+      </button>
+    </div>
+    <div class="col-md-2">
+      <button class="btn w-100" [class.btn-dark]="vistaActual === 'preregistros'" [class.btn-outline-dark]="vistaActual !== 'preregistros'" (click)="vistaActual = 'preregistros'; loadPreregistros()">
+        📥 Pre-Registros
+        <span class="badge bg-warning text-dark" *ngIf="preregistrosPendientes > 0">{{preregistrosPendientes}}</span>
       </button>
     </div>
   </div>
@@ -48,6 +65,58 @@
         <div class="card bg-info text-white p-2 text-center">
           <small>Ingresos</small>
           <h5>${{ingresosDelMes}}</h5>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA: SOLICITUDES DE REGISTRO -->
+  <div *ngIf="vistaActual === 'solicitudes'">
+    <div class="card">
+      <div class="card-header bg-secondary text-white">
+        <h4 class="mb-0">📝 Solicitudes de Registro</h4>
+      </div>
+      <div class="card-body">
+        <div *ngIf="solicitudesRegistro.length === 0" class="text-center py-5">
+          <h5 class="text-muted">No hay solicitudes pendientes</h5>
+        </div>
+        <div class="table-responsive" *ngIf="solicitudesRegistro.length > 0">
+          <table class="table table-hover">
+            <thead class="table-dark">
+              <tr>
+                <th>Contrato</th>
+                <th>Nombre</th>
+                <th>Teléfono</th>
+                <th>Dirección</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let sol of solicitudesRegistro">
+                <td>{{sol.numero}}</td>
+                <td>{{sol.solicitudRegistro?.nombre || sol.nombre}}</td>
+                <td>{{sol.solicitudRegistro?.telefono || sol.telefono}}</td>
+                <td>{{sol.solicitudRegistro?.direccion || sol.direccion}}</td>
+                <td>{{sol.solicitudRegistro?.fecha | date:'dd/MM/yyyy HH:mm'}}</td>
+                <td>
+                  <span class="badge" [class.bg-warning]="sol.solicitudRegistro?.estado === 'pendiente'" [class.bg-success]="sol.solicitudRegistro?.estado === 'aprobado'" [class.bg-danger]="sol.solicitudRegistro?.estado === 'rechazado'">
+                    {{sol.solicitudRegistro?.estado | uppercase}}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn btn-success btn-sm me-1" *ngIf="sol.solicitudRegistro?.estado === 'pendiente'" (click)="aprobarSolicitud(sol)">
+                    ✓ Aprobar
+                  </button>
+                  <button class="btn btn-danger btn-sm" *ngIf="sol.solicitudRegistro?.estado === 'pendiente'" (click)="rechazarSolicitud(sol)">
+                    ✗ Rechazar
+                  </button>
+                  <span *ngIf="sol.solicitudRegistro?.estado !== 'pendiente'" class="text-muted">-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -142,6 +211,7 @@
                 </div>
               </td>
               <td>
+                <button class="btn btn-sm btn-warning me-1" (click)="editarCliente(u)" title="Editar">✏️</button>
                 <button class="btn btn-sm btn-danger" (click)="eliminarUsuario(u)" title="Eliminar">🗑️</button>
               </td>
             </tr>
@@ -336,6 +406,140 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA: ASIGNAR REPORTES A TÉCNICOS -->
+  <div *ngIf="vistaActual === 'asignar'">
+    <div class="card">
+      <div class="card-header bg-danger text-white">
+        <h4 class="mb-0">🎯 Asignar Reportes a Técnicos</h4>
+      </div>
+      <div class="card-body">
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <h5>Reportes Pendientes de Asignar</h5>
+            <div *ngIf="reportesParaAsignar.length === 0" class="alert alert-info">
+              No hay reportes pendientes de asignar
+            </div>
+            <div class="table-responsive" *ngIf="reportesParaAsignar.length > 0">
+              <table class="table table-sm table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Tipo</th>
+                    <th>Mensaje</th>
+                    <th>Fecha</th>
+                    <th>Seleccionar</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let reporte of reportesParaAsignar" 
+                      [class.table-success]="reporteSeleccionado?._id === reporte._id"
+                      (click)="reporteSeleccionado = reporte">
+                    <td>{{reporte.numero}}</td>
+                    <td><span class="badge bg-primary">{{reporte.tipo}}</span></td>
+                    <td>{{reporte.mensaje | slice:0:30}}...</td>
+                    <td>{{reporte.fecha | date:'dd/MM/yyyy'}}</td>
+                    <td>
+                      <input type="radio" name="reporteSelect" [checked]="reporteSeleccionado?._id === reporte._id">
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <h5>Seleccionar Técnico</h5>
+            <div class="card">
+              <div class="card-body">
+                <div class="mb-3">
+                  <label class="form-label">Técnico:</label>
+                  <select class="form-select" [(ngModel)]="tecnicoSeleccionado">
+                    <option value="">Seleccionar técnico...</option>
+                    <option *ngFor="let tech of tecnicos" [value]="tech._id" [disabled]="!tech.activo">
+                      {{tech.nombre}} - {{tech.especialidad}} {{!tech.activo ? '(Inactivo)' : ''}}
+                    </option>
+                  </select>
+                </div>
+                <button class="btn btn-danger w-100" 
+                        [disabled]="!reporteSeleccionado || !tecnicoSeleccionado"
+                        (click)="asignarReporte(reporteSeleccionado)">
+                  📤 Asignar Reporte
+                </button>
+              </div>
+            </div>
+            <div class="mt-3" *ngIf="reporteSeleccionado">
+              <h6>Reporte Seleccionado:</h6>
+              <div class="card bg-light">
+                <div class="card-body">
+                  <p><strong>Cliente:</strong> {{reporteSeleccionado.numero}}</p>
+                  <p><strong>Tipo:</strong> {{reporteSeleccionado.tipo}}</p>
+                  <p><strong>Mensaje:</strong> {{reporteSeleccionado.mensaje}}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA: PRE-REGISTROS -->
+  <div *ngIf="vistaActual === 'preregistros'">
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <h4 class="mb-0">📥 Solicitudes de Nuevo Servicio</h4>
+      </div>
+      <div class="card-body">
+        <div *ngIf="preregistros.length === 0" class="text-center py-5">
+          <h5 class="text-muted">No hay pre-registros pendientes</h5>
+        </div>
+        <div class="table-responsive" *ngIf="preregistros.length > 0">
+          <table class="table table-hover">
+            <thead class="table-dark">
+              <tr>
+                <th>Nombre</th>
+                <th>Teléfono</th>
+                <th>Email</th>
+                <th>Dirección</th>
+                <th>Paquete</th>
+                <th>Precio</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Contrato</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let prereg of preregistros">
+                <td>{{prereg.nombre}}</td>
+                <td>{{prereg.telefono}}</td>
+                <td>{{prereg.email || '-'}}</td>
+                <td>{{prereg.direccion}}</td>
+                <td><span class="badge bg-primary">{{prereg.paquete | uppercase}}</span></td>
+                <td>${{prereg.precio}}</td>
+                <td>{{prereg.fechaSolicitud | date:'dd/MM/yyyy HH:mm'}}</td>
+                <td>
+                  <span class="badge" [class.bg-warning]="prereg.estado === 'pendiente'" [class.bg-success]="prereg.estado === 'aprobado'" [class.bg-danger]="prereg.estado === 'rechazado'">
+                    {{prereg.estado | uppercase}}
+                  </span>
+                </td>
+                <td>{{prereg.numeroContrato || '-'}}</td>
+                <td>
+                  <button class="btn btn-success btn-sm me-1" *ngIf="prereg.estado === 'pendiente'" (click)="aprobarPreregistro(prereg)">
+                    ✓ Aprobar
+                  </button>
+                  <button class="btn btn-danger btn-sm" *ngIf="prereg.estado === 'pendiente'" (click)="rechazarPreregistro(prereg)">
+                    ✗ Rechazar
+                  </button>
+                  <span *ngIf="prereg.estado !== 'pendiente'" class="text-muted">-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

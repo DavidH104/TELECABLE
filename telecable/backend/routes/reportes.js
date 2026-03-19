@@ -1,6 +1,7 @@
 const express = require("express")
 const router = express.Router()
 const Report = require("../models/report")
+const User = require("../models/user")
 
 router.post("/", async (req, res) => {
   try {
@@ -76,6 +77,77 @@ router.delete("/:id", async (req, res) => {
   try {
     await Report.findByIdAndDelete(req.params.id)
     res.json({ message: "Reporte eliminado" })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+router.put("/:id", async (req, res) => {
+  try {
+    const { estado, tecnicoAsignado, tecnicoNombre, enviadoATecnico, prioridad, notasTecnico, fechaAtencion, mensaje, clienteId } = req.body;
+    
+    const updateData = {};
+    if (estado !== undefined) updateData.estatus = estado;
+    if (tecnicoAsignado !== undefined) updateData.tecnicoAsignado = tecnicoAsignado;
+    if (tecnicoNombre !== undefined) updateData.tecnicoNombre = tecnicoNombre;
+    if (enviadoATecnico !== undefined) updateData.enviadoATecnico = enviadoATecnico;
+    if (prioridad !== undefined) updateData.prioridad = prioridad;
+    if (notasTecnico !== undefined) updateData.notasTecnico = notasTecnico;
+    if (fechaAtencion !== undefined) updateData.fechaAtencion = fechaAtencion;
+    if (mensaje !== undefined) updateData.mensaje = mensaje;
+    
+    const report = await Report.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateData },
+      { new: true }
+    );
+    
+    if (clienteId && tecnicoAsignado) {
+      await User.updateOne(
+        { _id: clienteId, 'reportes._id': req.params.id },
+        { $set: {
+          'reportes.$.tecnicoAsignado': tecnicoAsignado,
+          'reportes.$.tecnicoNombre': tecnicoNombre,
+          'reportes.$.enviadoATecnico': enviadoATecnico
+        }}
+      );
+    }
+    
+    res.json(report)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+router.put("/:id/asignar-tecnico", async (req, res) => {
+  try {
+    const { tecnicoId, tecnicoNombre, clienteId } = req.body
+    
+    const updateData = {
+      tecnicoAsignado: tecnicoId,
+      tecnicoNombre: tecnicoNombre,
+      estatus: 'asignado',
+      enviadoATecnico: true
+    };
+    
+    const report = await Report.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateData },
+      { new: true }
+    );
+    
+    if (clienteId) {
+      await User.updateOne(
+        { _id: clienteId, 'reportes._id': req.params.id },
+        { $set: {
+          'reportes.$.tecnicoAsignado': tecnicoId,
+          'reportes.$.tecnicoNombre': tecnicoNombre,
+          'reportes.$.estatus': 'Asignado'
+        }}
+      );
+    }
+    
+    res.json(report)
   } catch (error) {
     res.status(500).json({ error: error.message })
   }

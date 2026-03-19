@@ -266,6 +266,129 @@ res.status(500).json({
 });
 
 /*
+SOLICITAR CÓDIGO DE VERIFICACIÓN POR TELÉFONO
+POST
+/api/auth/user/solicitar-codigo
+*/
+
+router.post('/user/solicitar-codigo', codeLimiter, async (req, res) => {
+  try {
+    const { contrato, telefono } = req.body;
+
+    if (!contrato || !telefono) {
+      return res.status(400).json({ error: "Contrato y teléfono son requeridos" });
+    }
+
+    const user = await User.findOne({ numero: contrato });
+    
+    if (!user) {
+      return res.json({ 
+        mensaje: "Si el contrato y teléfono son válidos, recibirás un código" 
+      });
+    }
+
+    if (user.telefono !== telefono) {
+      return res.json({ 
+        mensaje: "Si el contrato y teléfono son válidos, recibirás un código" 
+      });
+    }
+
+    const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedCodigo = await bcrypt.hash(codigo, 10);
+    
+    user.codigoVerificacion = hashedCodigo;
+    user.codigoExpira = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+
+    console.log(`\n========================================`);
+    console.log(`CÓDIGO DE VERIFICACIÓN PARA ${user.nombre}`);
+    console.log(`Contrato: ${contrato}`);
+    console.log(`Código: ${codigo}`);
+    console.log(`Expira en 10 minutos`);
+    console.log(`========================================\n`);
+
+    res.json({ 
+      mensaje: "Si el contrato y teléfono son válidos, recibirás un código",
+      codigoTemporal: codigo 
+    });
+
+  } catch(error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/*
+VERIFICAR CÓDIGO Y LOGIN
+POST
+/api/auth/user/verificar-login
+*/
+
+router.post('/user/verificar-login', verifyCodeLimiter, async (req, res) => {
+  try {
+    const { contrato, codigo, password } = req.body;
+
+    if (!contrato || !codigo || !password) {
+      return res.status(400).json({ error: "Todos los campos son requeridos" });
+    }
+
+    const user = await User.findOne({ numero: contrato });
+    
+    if (!user) {
+      return res.status(400).json({ error: "Contrato o código inválido" });
+    }
+
+    if (!user.codigoVerificacion) {
+      return res.status(400).json({ error: "No hay código de verificación pendiente" });
+    }
+
+    const isCodeValid = await bcrypt.compare(codigo, user.codigoVerificacion);
+    
+    if (!isCodeValid) {
+      return res.status(400).json({ error: "Código de verificación inválido" });
+    }
+
+    if (user.codigoExpira && new Date() > user.codigoExpira) {
+      return res.status(400).json({ error: "El código de verificación ha expirado" });
+    }
+
+    // Verificar contraseña
+    if (!user.password) {
+      return res.status(400).json({ error: "Este usuario no tiene contraseña establecida" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({ mensaje: "Contraseña incorrecta" });
+    }
+
+    // Limpiar código de verificación
+    user.codigoVerificacion = null;
+    user.codigoExpira = null;
+    await user.save();
+
+    const userResponse = {
+      _id: user._id,
+      numero: user.numero,
+      nombre: user.nombre,
+      telefono: user.telefono,
+      localidad: user.localidad,
+      estatus: user.estatus,
+      deuda: user.deuda,
+      recibos: user.recibos
+    };
+
+    res.json({
+      mensaje: "Login correcto",
+      user: userResponse
+    });
+
+  } catch(error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/*
 CREAR NUEVO ADMINISTRADOR
 POST
 /api/auth/admin/crear
@@ -315,6 +438,93 @@ router.get('/admin/listar', async (req, res) => {
   try {
     const admins = await Admin.find({}, '-password');
     res.json(admins);
+  } catch(error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/solicitudes', async (req, res) => {
+  try {
+    const solicitudes = await User.find({
+      'solicitudRegistro.estado': { $in: ['pendiente', 'aprobado', 'rechazado'] }
+    }).sort({ 'solicitudRegistro.fecha': -1 });
+    res.json(solicitudes);
+  } catch(error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/solicitudes/:id/aprobar', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    user.solicitudRegistro.estado = 'aprobado';
+    user.solicitudRegistro.fecha = new Date();
+    await user.save();
+    res.json({ mensaje: 'Solicitud aprobada', user });
+  } catch(error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/solicitudes/:id/rechazar', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    user.solicitudRegistro.estado = 'rechazado';
+    user.solicitudRegistro.fecha = new Date();
+    await user.save();
+    res.json({ mensaje: 'Solicitud rechazada', user });
+  } catch(error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/solicitudes/crear', async (req, res) => {
+  try {
+    const { numero, nombre, telefono, direccion } = req.body;
+    if (!numero || !nombre || !telefono) {
+      return res.status(400).json({ error: 'Número de contrato, nombre y teléfono son requeridos' });
+    }
+    let user = await User.findOne({ numero });
+    if (user) {
+      if (user.solicitudRegistro && user.solicitudRegistro.estado === 'pendiente') {
+        return res.status(400).json({ error: 'Ya existe una solicitud pendiente para este contrato' });
+      }
+      if (user.password) {
+        return res.status(400).json({ error: 'Este contrato ya tiene una cuenta' });
+      }
+      user.solicitudRegistro = {
+        tipo: 'nuevo_usuario',
+        estado: 'pendiente',
+        fecha: new Date(),
+        nombre,
+        telefono,
+        direccion
+      };
+      await user.save();
+      return res.json({ mensaje: 'Solicitud actualizada', user });
+    }
+    user = new User({
+      numero,
+      nombre,
+      telefono,
+      direccion,
+      solicitudRegistro: {
+        tipo: 'nuevo_usuario',
+        estado: 'pendiente',
+        fecha: new Date(),
+        nombre,
+        telefono,
+        direccion
+      }
+    });
+    await user.save();
+    res.json({ mensaje: 'Solicitud creada correctamente', user });
   } catch(error) {
     res.status(500).json({ error: error.message });
   }

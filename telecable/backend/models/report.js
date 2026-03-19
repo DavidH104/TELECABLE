@@ -14,6 +14,11 @@ const reportSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  tipo: {
+    type: String,
+    enum: ['Falla', 'Instalacion', 'Retiro', 'Pago', 'Otro'],
+    default: 'Otro'
+  },
   mensaje: {
     type: String,
     required: true
@@ -29,6 +34,19 @@ const reportSchema = new mongoose.Schema({
   fechaAtencion: {
     type: Date,
     default: null
+  },
+  tecnicoAsignado: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Technician',
+    default: null
+  },
+  tecnicoNombre: {
+    type: String,
+    default: null
+  },
+  enviadoATecnico: {
+    type: Boolean,
+    default: false
   }
 }, {
   collection: 'reportes'

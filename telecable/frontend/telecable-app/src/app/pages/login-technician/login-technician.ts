@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, Inject, PLATFORM_ID, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TechnicianService } from '../../services/technician.service';
+import { isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-login-technician',
@@ -10,7 +11,7 @@ import { TechnicianService } from '../../services/technician.service';
   imports: [CommonModule, FormsModule],
   templateUrl: './login-technician.html'
 })
-export class LoginTechnicianComponent {
+export class LoginTechnicianComponent implements OnInit {
   username: string = '';
   password: string = '';
   loading: boolean = false;
@@ -19,11 +20,15 @@ export class LoginTechnicianComponent {
 
   constructor(
     private technicianService: TechnicianService,
-    private router: Router
-  ) {
-    // Si ya hay sesión de técnico, redirigir al dashboard
-    if (this.technicianService.isLoggedIn()) {
-      this.router.navigate(['/technician-dashboard']);
+    private router: Router,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {}
+
+  ngOnInit() {
+    if (isPlatformBrowser(this.platformId)) {
+      if (this.technicianService.isLoggedIn()) {
+        this.router.navigate(['/technician-dashboard']);
+      }
     }
   }
 
@@ -39,14 +44,16 @@ export class LoginTechnicianComponent {
     this.technicianService.login(this.username, this.password).subscribe({
       next: (response) => {
         this.loading = false;
-        // Guardar técnico en localStorage
-        this.technicianService.saveTechnician(response.tecnico);
-        // Redirigir al dashboard de técnico
-        this.router.navigate(['/technician-dashboard']);
+        if (response && response.tecnico) {
+          this.technicianService.saveTechnician(response.tecnico);
+          this.router.navigate(['/technician-dashboard']);
+        } else {
+          this.error = 'Error en la respuesta del servidor';
+        }
       },
       error: (err) => {
         this.loading = false;
-        this.error = err.error?.mensaje || 'Error al iniciar sesión';
+        this.error = err.error?.mensaje || err.message || 'Error al iniciar sesión';
       }
     });
   }

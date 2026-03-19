@@ -45,6 +45,11 @@ export class UserService {
     return this.http.put<any>(`${this.api}/deuda/${id}`, { deuda: debt });
   }
 
+  /** Actualizar usuario completo */
+  updateUser(id: string, data: any): Observable<any> {
+    return this.http.put<any>(`${this.api}/${id}`, data);
+  }
+
   /** Registrar un pago (recibo) para un usuario */
   addPaymentRecord(id: string, amount: number): Observable<any> {
     return this.http.put<any>(`${this.api}/recibo/${id}`, { monto: amount });

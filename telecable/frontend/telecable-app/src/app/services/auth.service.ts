@@ -87,4 +87,29 @@ export class AuthService {
   listAdmins(): Observable<any[]> {
     return this.http.get<any[]>(`${this.api}/admin/listar`);
   }
+
+  // Solicitudes de registro
+  getSolicitudes(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.api}/solicitudes`);
+  }
+
+  aprobarSolicitud(id: string): Observable<any> {
+    return this.http.post<any>(`${this.api}/solicitudes/${id}/aprobar`, {});
+  }
+
+  rechazarSolicitud(id: string): Observable<any> {
+    return this.http.post<any>(`${this.api}/solicitudes/${id}/rechazar`, {});
+  }
+
+  crearSolicitud(data: any): Observable<any> {
+    return this.http.post<any>(`${this.api}/solicitudes/crear`, data);
+  }
+
+  requestLoginCode(contrato: string, telefono: string): Observable<any> {
+    return this.http.post<any>(`${this.api}/user/solicitar-codigo`, { contrato, telefono });
+  }
+
+  verifyLogin(contrato: string, codigo: string, password: string): Observable<any> {
+    return this.http.post<any>(`${this.api}/user/verificar-login`, { contrato, codigo, password });
+  }
 }

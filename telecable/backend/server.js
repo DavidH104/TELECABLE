@@ -8,6 +8,8 @@ const usersRoutes = require('./routes/users');
 const reportesRoutes = require('./routes/reportes');
 const receiptRoutes = require('./routes/receipts');
 const technicianRoutes = require('./routes/technicians');
+const preregistrosRoutes = require('./routes/preregistros');
+const configRoutes = require('./routes/config');
 const Admin = require('./models/admin');
 
 const app = express();
@@ -41,6 +43,8 @@ app.use('/api/users', usersRoutes);
 app.use('/api/reportes', reportesRoutes);
 app.use('/api/receipts', receiptRoutes);
 app.use('/api/technicians', technicianRoutes);
+app.use('/api/preregistros', preregistrosRoutes);
+app.use('/api/config', configRoutes);
 
 const port = process.env.PORT || 5000;
 

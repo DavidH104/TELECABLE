@@ -13,13 +13,45 @@ import { AuthService } from '../../services/auth.service';
 export class LoginUser {
 
   contrato = '';
+  telefono = '';
+  codigo = '';
   password = '';
   error = '';
+  success = '';
+  loading = false;
+  step: 'phone' | 'code' = 'phone';
 
   constructor(
     private authService: AuthService, 
     private router: Router
   ) {}
+
+  requestCode() {
+    this.error = '';
+    
+    if (!this.contrato.trim()) {
+      this.error = 'Por favor, ingrese su número de contrato.';
+      return;
+    }
+    
+    if (!this.telefono.trim()) {
+      this.error = 'Por favor, ingrese su número de teléfono.';
+      return;
+    }
+
+    this.loading = true;
+    this.authService.requestLoginCode(this.contrato, this.telefono).subscribe({
+      next: (res) => {
+        this.loading = false;
+        this.success = 'Código enviado. Revisa la consola (en desarrollo) o tu teléfono.';
+        this.step = 'code';
+      },
+      error: (err) => {
+        this.loading = false;
+        this.error = err.error?.mensaje || err.error?.error || 'Error al solicitar código';
+      }
+    });
+  }
 
   login() {
     this.error = '';
@@ -29,13 +61,20 @@ export class LoginUser {
       return;
     }
     
+    if (!this.codigo.trim()) {
+      this.error = 'Por favor, ingrese el código de verificación.';
+      return;
+    }
+    
     if (!this.password.trim()) {
       this.error = 'Por favor, ingrese su contraseña.';
       return;
     }
 
-    this.authService.loginUser(this.contrato, this.password).subscribe({
+    this.loading = true;
+    this.authService.verifyLogin(this.contrato, this.codigo, this.password).subscribe({
       next: (res) => {
+        this.loading = false;
         if (res && res.user) {
           this.router.navigate(['/user-dashboard']);
         } else {
@@ -43,13 +82,17 @@ export class LoginUser {
         }
       },
       error: (err) => {
-        console.error('Error en el login:', err);
-        if (err.error?.necesitaPassword) {
-          this.error = 'No tienes contraseña establecida. Crea una primero.';
-        } else {
-          this.error = err.error?.mensaje || 'Error al iniciar sesión';
-        }
+        this.loading = false;
+        this.error = err.error?.mensaje || err.error?.error || 'Error al iniciar sesión';
       }
     });
+  }
+
+  backToPhone() {
+    this.step = 'phone';
+    this.codigo = '';
+    this.password = '';
+    this.error = '';
+    this.success = '';
   }
 }

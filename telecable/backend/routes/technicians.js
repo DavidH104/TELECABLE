@@ -100,11 +100,36 @@ router.post('/', async (req, res) => {
 // Actualizar técnico
 router.put('/:id', async (req, res) => {
   try {
-    const { nombre, telefono, email, especialidad, activo } = req.body;
+    const { username, password, nombre, telefono, email, especialidad, activo } = req.body;
+    
+    // Si se proporciona una nueva contraseña, encriptarla
+    let passwordEncriptada;
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      passwordEncriptada = await bcrypt.hash(password, salt);
+    }
+    
+    // Construir objeto de actualización
+    const datosActualizar = { nombre, telefono, email, especialidad, activo };
+    
+    // Agregar username si se proporciona
+    if (username) {
+      // Verificar si el username ya existe en otro técnico
+      const existente = await Technician.findOne({ username, _id: { $ne: req.params.id } });
+      if (existente) {
+        return res.status(400).json({ mensaje: 'El nombre de usuario ya existe' });
+      }
+      datosActualizar.username = username;
+    }
+    
+    // Agregar password encriptada si se proporciona
+    if (passwordEncriptada) {
+      datosActualizar.password = passwordEncriptada;
+    }
     
     const tecnico = await Technician.findByIdAndUpdate(
       req.params.id,
-      { nombre, telefono, email, especialidad, activo },
+      datosActualizar,
       { new: true }
     );
     
