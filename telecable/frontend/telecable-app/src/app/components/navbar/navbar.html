@@ -2,7 +2,25 @@
 
 <div class="navbar-content">
 
-<h2 class="titulo">TELECABLE</h2>
+  <h2 class="titulo">
+    <a routerLink="/promos" class="titulo-link">TELECABLE</a>
+  </h2>
+
+  <div class="navbar-menu">
+    <!-- Menú para usuarios no autenticados -->
+    <div *ngIf="!isLoggedIn" class="menu-publico">
+      <a routerLink="/promos" class="nav-link" routerLinkActive="active">🏠 Inicio</a>
+      <a routerLink="/login" class="nav-link" routerLinkActive="active">👨‍💼 Admin</a>
+    </div>
+
+    <!-- Menú para usuarios autenticados -->
+    <div *ngIf="isLoggedIn" class="menu-autenticado">
+      <a routerLink="/user-dashboard" class="nav-link" routerLinkActive="active" *ngIf="userRole === 'user'">📊 Mi Panel</a>
+      <a routerLink="/admin-dashboard" class="nav-link" routerLinkActive="active" *ngIf="userRole === 'admin'">👨‍💼 Panel Admin</a>
+      <a routerLink="/reportes" class="nav-link" routerLinkActive="active" *ngIf="userRole === 'admin'">📋 Reportes</a>
+      <button class="btn-logout" (click)="logout()">🚪 Salir</button>
+    </div>
+  </div>
 
 </div>
 

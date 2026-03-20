@@ -6,24 +6,33 @@
       <p class="logo-slogan">Sistema de Gestión de Clientes</p>
     </div>
 
-    <!-- Botón para cambiar entre Admin y Cliente -->
+    <!-- Botones para cambiar entre Admin, Cliente y Registro -->
     <div class="switch-container">
-      <button 
-        class="btn-switch" 
-        [class.active]="isAdminMode" 
-        (click)="isAdminMode = true">
+      <button
+        class="btn-switch"
+        [class.active]="mode === 'admin'"
+        (click)="setMode('admin')"
+      >
         Administrador
       </button>
-      <button 
-        class="btn-switch" 
-        [class.active]="!isAdminMode" 
-        (click)="isAdminMode = false">
+      <button
+        class="btn-switch"
+        [class.active]="mode === 'cliente'"
+        (click)="setMode('cliente')"
+      >
         Cliente
+      </button>
+      <button
+        class="btn-switch"
+        [class.active]="mode === 'registro'"
+        (click)="setMode('registro')"
+      >
+        Registro
       </button>
     </div>
 
     <!-- Login Administrador -->
-    <div class="card p-4" *ngIf="isAdminMode">
+    <div class="card p-4" *ngIf="mode === 'admin'">
       <h4 class="mb-3"><i class="bi bi-shield-lock me-2"></i>Acceso Administrador</h4>
       <div class="mb-3">
         <label class="form-label">Usuario</label>
@@ -45,7 +54,7 @@
     </div>
 
     <!-- Login Cliente -->
-    <div class="card p-4" *ngIf="!isAdminMode">
+    <div class="card p-4" *ngIf="mode === 'cliente'">
       <h4 class="mb-3"><i class="bi bi-person-vcard me-2"></i>Portal del Cliente</h4>
       <p class="text-muted mb-3">Ingresa tu número de contrato</p>
       <div class="mb-3">
@@ -58,6 +67,90 @@
       <button class="btn btn-success w-100 btn-lg" (click)="loginClient()">
         <i class="bi bi-box-arrow-in-right me-2"></i>Consultar Mi Cuenta
       </button>
+    </div>
+
+    <!-- Registro de Nuevo Cliente -->
+    <div class="card p-4" *ngIf="mode === 'registro'">
+      <h4 class="mb-3"><i class="bi bi-person-plus me-2"></i>Registrar Nuevo Usuario</h4>
+
+      <div *ngIf="registroExitoso" class="alert alert-success">
+        <p class="mb-1">¡Registro exitoso! Ya eres candidato para convertirte en cliente.</p>
+        <h5 class="mb-2">Datos registrados</h5>
+        <ul class="list-unstyled mb-3">
+          <li><strong>Nombre:</strong> {{ registroDatos?.nombre }}</li>
+          <li><strong>Teléfono:</strong> {{ registroDatos?.telefono }}</li>
+          <li><strong>Localidad:</strong> {{ registroDatos?.localidad }}</li>
+          <li><strong>Contrato:</strong> {{ registroDatos?.numero }}</li>
+        </ul>
+
+        <h5 class="mb-2">Planes disponibles</h5>
+        <div class="plan-cards mb-3">
+          <div class="plan-card">
+            <h6>Plan Básico</h6>
+            <p class="mb-1">Internet hasta 50 Mbps</p>
+            <p class="mb-1">TV + 80 canales</p>
+            <p class="fw-bold">$25 / mes</p>
+          </div>
+          <div class="plan-card">
+            <h6>Plan Premium</h6>
+            <p class="mb-1">Internet hasta 150 Mbps</p>
+            <p class="mb-1">TV + 200 canales</p>
+            <p class="fw-bold">$45 / mes</p>
+          </div>
+          <div class="plan-card">
+            <h6>Plan Total</h6>
+            <p class="mb-1">Internet ilimitado</p>
+            <p class="mb-1">TV + 250 canales + Streaming</p>
+            <p class="fw-bold">$65 / mes</p>
+          </div>
+        </div>
+
+        <div class="d-grid gap-2">
+          <button class="btn btn-primary" (click)="solicitarVisitaOficina()">
+            Solicitar ir a la oficina para ser cliente
+          </button>
+          <button class="btn btn-info" routerLink="/promos">
+            Ver promociones de planes
+          </button>
+          <button class="btn btn-outline-secondary" (click)="irARegistroPassword()">
+            Establecer Contraseña (opcional)
+          </button>
+        </div>
+
+        <div *ngIf="mostrarInfoOficina" class="mt-4 p-3 border rounded bg-light">
+          <h6 class="mb-2">¿Cómo llegar a nuestra oficina?</h6>
+          <p class="mb-1"><strong>Dirección:</strong> Av. Principal 1234, Centro</p>
+          <p class="mb-1"><strong>Horario de atención:</strong> Lun - Vie 9:00 a 18:00</p>
+          <p class="mb-1"><strong>Teléfono:</strong> (123) 456-7890</p>
+          <p class="mb-1">Trae tu documento y este número de contrato para completar el alta.</p>
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-outline-primary btn-sm" (click)="mostrarInfoOficina=false">
+              Cerrar
+            </button>
+            <a class="btn btn-primary btn-sm" href="https://www.google.com/maps/search/?api=1&query=Av.+Principal+1234" target="_blank">
+              Ver en Maps
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!registroExitoso">
+        <div class="mb-3">
+          <label class="form-label">Nombre</label>
+          <input type="text" class="form-control" placeholder="Nombre completo" [(ngModel)]="nombreRegistro" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Teléfono</label>
+          <input type="text" class="form-control" placeholder="Teléfono" [(ngModel)]="telefonoRegistro" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Localidad</label>
+          <input type="text" class="form-control" placeholder="Localidad" [(ngModel)]="localidadRegistro" />
+        </div>
+        <button class="btn btn-success w-100 btn-lg" (click)="registrarCliente()">
+          <i class="bi bi-check2-circle me-2"></i>Registrar
+        </button>
+      </div>
     </div>
 
     <!-- Pie -->

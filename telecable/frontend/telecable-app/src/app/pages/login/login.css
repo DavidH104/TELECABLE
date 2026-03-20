@@ -211,6 +211,38 @@
   font-size: 0.9rem;
 }
 
+.plan-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.plan-card {
+  border: 1px solid rgba(11, 60, 109, 0.15);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+.plan-card h6 {
+  margin-bottom: 8px;
+  font-weight: 700;
+  color: #0B3C6D;
+}
+
+.plan-card p {
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.plan-card .fw-bold {
+  font-weight: 700;
+  color: #1E6FB9;
+}
+
 /* Footer */
 .login-footer {
   text-align: center;

@@ -217,18 +217,33 @@
   padding: 4px 10px;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+
+/* Responsive: Oculta tabla y muestra lista en móvil */
+@media (max-width: 600px) {
+  .table-responsive {
+    display: none;
+  }
+  .clientes-lista-movil {
+    display: block;
+  }
   .container-fluid h1 {
     font-size: 1.4rem;
   }
-  
   .card h3 {
     font-size: 1.5rem;
   }
-  
   .btn {
     padding: 8px 15px;
     font-size: 0.9rem;
   }
+}
+@media (min-width: 601px) {
+  .clientes-lista-movil {
+    display: none;
+  }
+}
+.clientes-lista-movil .card {
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }

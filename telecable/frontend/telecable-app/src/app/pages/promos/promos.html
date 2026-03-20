@@ -1,0 +1,86 @@
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-body p-4">
+          <h2 class="text-center mb-4">Promociones de Planes TELECABLE</h2>
+
+          <p class="lead text-center mb-4">
+            Bienvenido/a a nuestra sección de promociones. Encuentra los mejores planes para tu hogar.
+          </p>
+
+          <div class="promo-card mb-3">
+            <h5>Plan Conecta</h5>
+            <p>Internet 80 Mbps + TV digital.</p>
+            <p class="precio">$22 / mes</p>
+            <p class="small text-muted">Instalación incluida.</p>
+          </div>
+
+          <div class="promo-card mb-3">
+            <h5>Plan Avanza</h5>
+            <p>Internet 150 Mbps + TV + llamadas ilimitadas.</p>
+            <p class="precio">$38 / mes</p>
+            <p class="small text-muted">Sin permanencia mínima.</p>
+          </div>
+
+          <div class="promo-card mb-3">
+            <h5>Plan Total</h5>
+            <p>Internet ilimitado + paquete premium + soporte VIP 24/7.</p>
+            <p class="precio">$55 / mes</p>
+            <p class="small text-muted">Incluye router y WiFi Mesh.</p>
+          </div>
+
+          <!-- Formulario de Registro -->
+          <div class="mt-5 pt-4 border-top">
+            <h3 class="text-center mb-4">Regístrate Ahora</h3>
+            <p class="text-center text-muted mb-4">Completa tus datos para registrarte en TELECABLE</p>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre Completo</label>
+                <input type="text" class="form-control" [(ngModel)]="nuevo.nombre" placeholder="Ingresa tu nombre completo">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Teléfono</label>
+                <input type="tel" class="form-control" [(ngModel)]="nuevo.telefono" placeholder="Ingresa tu teléfono">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Localidad</label>
+                <input type="text" class="form-control" [(ngModel)]="nuevo.localidad" placeholder="Ingresa tu localidad">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Paquete Seleccionado</label>
+                <select class="form-control" [(ngModel)]="nuevo.paquete">
+                  <option value="">Selecciona un paquete</option>
+                  <option value="Plan Conecta">Plan Conecta - $22/mes</option>
+                  <option value="Plan Avanza">Plan Avanza - $38/mes</option>
+                  <option value="Plan Total">Plan Total - $55/mes</option>
+                </select>
+              </div>
+              <div class="col-12 mb-3">
+                <label class="form-label">Dirección</label>
+                <textarea class="form-control" [(ngModel)]="nuevo.direccion" rows="2" placeholder="Ingresa tu dirección completa"></textarea>
+              </div>
+              <div class="col-12 text-center">
+                <button class="btn btn-success btn-lg px-5" (click)="registrar()" [disabled]="!nuevo.nombre || !nuevo.telefono || !nuevo.localidad || !nuevo.paquete || isRegistrando">
+                  {{ isRegistrando ? 'Registrando...' : 'Registrarme' }}
+                </button>
+              </div>
+
+              <!-- Mensaje de registro -->
+              <div *ngIf="mensajeRegistro" class="col-12 mt-3">
+                <div class="alert" [class.alert-success]="!isRegistrando && mensajeRegistro.includes('exitoso')" [class.alert-info]="isRegistrando" [class.alert-danger]="!isRegistrando && !mensajeRegistro.includes('exitoso')">
+                  {{ mensajeRegistro }}
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center mt-3">
+              <small class="text-muted">¿Ya tienes cuenta? <a routerLink="/login-user">Inicia sesión</a></small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
