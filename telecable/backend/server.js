@@ -23,7 +23,6 @@ mongoose.connect(dbURI)
   .then(async () => {
     console.log('MongoDB Connected...');
     
-    // Crear admin por defecto si no existe
     const adminExists = await Admin.findOne({ usuario: 'admin' });
     if (!adminExists) {
       const hashedPassword = await bcrypt.hash('admin123', 10);
