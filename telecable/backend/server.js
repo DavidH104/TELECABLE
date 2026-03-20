@@ -3,28 +3,26 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 
-// Import routes
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
 const reportesRoutes = require('./routes/reportes');
 const receiptRoutes = require('./routes/receipts');
+const technicianRoutes = require('./routes/technicians');
+const preregistrosRoutes = require('./routes/preregistros');
+const configRoutes = require('./routes/config');
 const Admin = require('./models/admin');
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// DB Config
 const dbURI = 'mongodb://localhost:27017/telecable';
 
-// Connect to MongoDB
 mongoose.connect(dbURI)
   .then(async () => {
     console.log('MongoDB Connected...');
     
-    // Crear admin por defecto si no existe
     const adminExists = await Admin.findOne({ usuario: 'admin' });
     if (!adminExists) {
       const hashedPassword = await bcrypt.hash('admin123', 10);
@@ -39,11 +37,13 @@ mongoose.connect(dbURI)
   })
   .catch(err => console.log(err));
 
-// Use Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/reportes', reportesRoutes);
 app.use('/api/receipts', receiptRoutes);
+app.use('/api/technicians', technicianRoutes);
+app.use('/api/preregistros', preregistrosRoutes);
+app.use('/api/config', configRoutes);
 
 const port = process.env.PORT || 5000;
 

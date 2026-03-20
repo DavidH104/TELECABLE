@@ -1,8 +1,8 @@
 const express = require("express")
 const router = express.Router()
 const Report = require("../models/report")
+const User = require("../models/user")
 
-// Crear un nuevo reporte
 router.post("/", async (req, res) => {
   try {
     const { usuarioId, nombreCliente, numeroContrato, mensaje } = req.body
@@ -23,7 +23,6 @@ router.post("/", async (req, res) => {
   }
 })
 
-// Obtener todos los reportes (para el admin)
 router.get("/", async (req, res) => {
   try {
     const reportes = await Report.find().sort({ fecha: -1 })
@@ -33,7 +32,6 @@ router.get("/", async (req, res) => {
   }
 })
 
-// Obtener reportes de un usuario especifico
 router.get("/usuario/:usuarioId", async (req, res) => {
   try {
     const reportes = await Report.find({ usuarioId: req.params.usuarioId }).sort({ fecha: -1 })
@@ -43,7 +41,6 @@ router.get("/usuario/:usuarioId", async (req, res) => {
   }
 })
 
-// Marcar reporte como atendido
 router.put("/:id/atendido", async (req, res) => {
   try {
     const report = await Report.findByIdAndUpdate(
@@ -60,7 +57,6 @@ router.put("/:id/atendido", async (req, res) => {
   }
 })
 
-// Marcar reporte como pendiente (reabrir)
 router.put("/:id/pendiente", async (req, res) => {
   try {
     const report = await Report.findByIdAndUpdate(
@@ -77,7 +73,6 @@ router.put("/:id/pendiente", async (req, res) => {
   }
 })
 
-// Eliminar reporte
 router.delete("/:id", async (req, res) => {
   try {
     await Report.findByIdAndDelete(req.params.id)
@@ -87,7 +82,77 @@ router.delete("/:id", async (req, res) => {
   }
 })
 
-// Eliminar reportes antiguos (mas de 30 dias) - manual execution
+router.put("/:id", async (req, res) => {
+  try {
+    const { estado, tecnicoAsignado, tecnicoNombre, enviadoATecnico, prioridad, notasTecnico, fechaAtencion, mensaje, clienteId } = req.body;
+    
+    const updateData = {};
+    if (estado !== undefined) updateData.estatus = estado;
+    if (tecnicoAsignado !== undefined) updateData.tecnicoAsignado = tecnicoAsignado;
+    if (tecnicoNombre !== undefined) updateData.tecnicoNombre = tecnicoNombre;
+    if (enviadoATecnico !== undefined) updateData.enviadoATecnico = enviadoATecnico;
+    if (prioridad !== undefined) updateData.prioridad = prioridad;
+    if (notasTecnico !== undefined) updateData.notasTecnico = notasTecnico;
+    if (fechaAtencion !== undefined) updateData.fechaAtencion = fechaAtencion;
+    if (mensaje !== undefined) updateData.mensaje = mensaje;
+    
+    const report = await Report.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateData },
+      { new: true }
+    );
+    
+    if (clienteId && tecnicoAsignado) {
+      await User.updateOne(
+        { _id: clienteId, 'reportes._id': req.params.id },
+        { $set: {
+          'reportes.$.tecnicoAsignado': tecnicoAsignado,
+          'reportes.$.tecnicoNombre': tecnicoNombre,
+          'reportes.$.enviadoATecnico': enviadoATecnico
+        }}
+      );
+    }
+    
+    res.json(report)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+router.put("/:id/asignar-tecnico", async (req, res) => {
+  try {
+    const { tecnicoId, tecnicoNombre, clienteId } = req.body
+    
+    const updateData = {
+      tecnicoAsignado: tecnicoId,
+      tecnicoNombre: tecnicoNombre,
+      estatus: 'asignado',
+      enviadoATecnico: true
+    };
+    
+    const report = await Report.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateData },
+      { new: true }
+    );
+    
+    if (clienteId) {
+      await User.updateOne(
+        { _id: clienteId, 'reportes._id': req.params.id },
+        { $set: {
+          'reportes.$.tecnicoAsignado': tecnicoId,
+          'reportes.$.tecnicoNombre': tecnicoNombre,
+          'reportes.$.estatus': 'Asignado'
+        }}
+      );
+    }
+    
+    res.json(report)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
 router.delete("/cleanup/antiguos", async (req, res) => {
   try {
     const fechaLimite = new Date()

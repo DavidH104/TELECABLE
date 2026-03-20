@@ -14,6 +14,11 @@ const reportSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  tipo: {
+    type: String,
+    enum: ['Falla', 'Instalacion', 'Retiro', 'Pago', 'Otro'],
+    default: 'Otro'
+  },
   mensaje: {
     type: String,
     required: true
@@ -24,17 +29,29 @@ const reportSchema = new mongoose.Schema({
   },
   estatus: {
     type: String,
-    default: 'pendiente' // pendiente, atendido
+    default: 'pendiente'
   },
   fechaAtencion: {
     type: Date,
     default: null
+  },
+  tecnicoAsignado: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Technician',
+    default: null
+  },
+  tecnicoNombre: {
+    type: String,
+    default: null
+  },
+  enviadoATecnico: {
+    type: Boolean,
+    default: false
   }
 }, {
   collection: 'reportes'
 })
 
-// Middleware para auto-eliminar reportes después de 30 días
 reportSchema.index({ fecha: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 })
 
 module.exports = mongoose.model("Report", reportSchema)

@@ -22,7 +22,6 @@ export class AuthService {
     return isPlatformBrowser(this.platformId);
   }
 
-  // Usar localStorage en lugar de sessionStorage para persistencia
   private getStorage(): Storage | null {
     if (!this.isBrowser()) return null;
     return localStorage;
@@ -38,7 +37,6 @@ export class AuthService {
         }
       }),
       map(res => {
-        // Retornar true si hay admin en la respuesta
         return res && res.admin ? true : false;
       }),
       catchError(err => {
@@ -82,13 +80,36 @@ export class AuthService {
     return !!localStorage.getItem(this.currentUserKey);
   }
 
-  // Crear nuevo administrador
   createAdmin(usuario: string, password: string, nombre: string): Observable<any> {
     return this.http.post<any>(`${this.api}/admin/crear`, { usuario, password, nombre });
   }
 
-  // Listar administradores
   listAdmins(): Observable<any[]> {
     return this.http.get<any[]>(`${this.api}/admin/listar`);
+  }
+
+  // Solicitudes de registro
+  getSolicitudes(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.api}/solicitudes`);
+  }
+
+  aprobarSolicitud(id: string): Observable<any> {
+    return this.http.post<any>(`${this.api}/solicitudes/${id}/aprobar`, {});
+  }
+
+  rechazarSolicitud(id: string): Observable<any> {
+    return this.http.post<any>(`${this.api}/solicitudes/${id}/rechazar`, {});
+  }
+
+  crearSolicitud(data: any): Observable<any> {
+    return this.http.post<any>(`${this.api}/solicitudes/crear`, data);
+  }
+
+  requestLoginCode(contrato: string, telefono: string): Observable<any> {
+    return this.http.post<any>(`${this.api}/user/solicitar-codigo`, { contrato, telefono });
+  }
+
+  verifyLogin(contrato: string, codigo: string, password: string): Observable<any> {
+    return this.http.post<any>(`${this.api}/user/verificar-login`, { contrato, codigo, password });
   }
 }

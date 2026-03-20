@@ -14,114 +14,151 @@
       </button>
     </div>
 
-    <!-- Tarjetas de Informacion Principal -->
-    <div class="row">
-      <div class="col-lg-8">
-        <div class="card p-4 h-100">
-          <h4><i class="bi bi-person-badge me-2"></i>Informacion de la Cuenta</h4>
-          <hr>
-          <div class="row">
-            <div class="col-md-6">
-              <p><b>Numero de Cliente:</b><br> {{user.numero}}</p>
-              <p><b>Localidad/Direccion:</b><br> {{user.localidad}}</p>
+    <!-- Menu de Navegacion -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-2">
+            <div class="d-flex justify-content-center gap-3">
+              <button class="btn btn-lg flex-fill" 
+                      [class.btn-primary]="vistaActual === 'cuenta'" 
+                      [class.btn-outline-primary]="vistaActual !== 'cuenta'"
+                      (click)="vistaActual = 'cuenta'">
+                <i class="bi bi-person-badge me-2"></i>Mi Cuenta
+              </button>
+              <button class="btn btn-lg flex-fill" 
+                      [class.btn-success]="vistaActual === 'pagos'" 
+                      [class.btn-outline-success]="vistaActual !== 'pagos'"
+                      (click)="vistaActual = 'pagos'">
+                <i class="bi bi-clock-history me-2"></i>Historial de Pagos
+              </button>
+              <button class="btn btn-lg flex-fill" 
+                      [class.btn-warning]="vistaActual === 'reportes'" 
+                      [class.btn-outline-warning]="vistaActual !== 'reportes'"
+                      (click)="vistaActual = 'reportes'">
+                <i class="bi bi-chat-square-text me-2"></i>Mis Reportes
+              </button>
             </div>
-            <div class="col-md-6">
-              <p><b>Estatus del Servicio:</b><br>
-                <span class="badge fs-6" [ngClass]="{
-                  'bg-success': user.estatus === 'Activo',
-                  'bg-secondary': user.estatus === 'Inactivo',
-                  'bg-warning text-dark': user.estatus === 'Suspendido',
-                  'bg-danger': user.estatus === 'Cancelado'
-                }">
-                  {{ user.estatus }}
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-4">
-        <div class="card p-4 h-100 bg-light">
-          <h4><i class="bi bi-currency-dollar me-2"></i>Saldo Pendiente</h4>
-          <hr>
-          <div class="text-center">
-            <p class="fs-1 fw-bold text-danger">${{user.deuda}}</p>
-            <p class="text-muted">Esta es la cantidad pendiente de pago.</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Historial de Pagos -->
-    <div class="card p-4 mt-4">
-      <h4><i class="bi bi-clock-history me-2"></i>Historial de Pagos</h4>
-      <div class="table-responsive">
-        <table class="table table-bordered table-striped mt-3">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Monto Pagado</th>
-              <th>Recibo</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let r of user.recibos; let i = index">
-              <td>{{r.fecha | date:'longDate'}}</td>
-              <td>{{r.monto | currency}}</td>
-              <td>
-                <button class="btn btn-info btn-sm" (click)="generarRecibo(r, i)">
-                  <i class="bi bi-file-earmark-pdf"></i> Descargar
-                </button>
-              </td>
-            </tr>
-            <tr *ngIf="!user.recibos || user.recibos.length === 0">
-              <td colspan="3" class="text-center">No hay pagos registrados.</td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- VISTA: MI CUENTA -->
+    <div *ngIf="vistaActual === 'cuenta'">
+      <!-- Tarjetas de Informacion Principal -->
+      <div class="row">
+        <div class="col-lg-8">
+          <div class="card p-4 h-100">
+            <h4><i class="bi bi-person-badge me-2"></i>Informacion de la Cuenta</h4>
+            <hr>
+            <div class="row">
+              <div class="col-md-6">
+                <p><b>Numero de Cliente:</b><br> {{user.numero}}</p>
+                <p><b>Localidad/Direccion:</b><br> {{user.localidad}}</p>
+              </div>
+              <div class="col-md-6">
+                <p><b>Estatus del Servicio:</b><br>
+                  <span class="badge fs-6" [ngClass]="{
+                    'bg-success': user.estatus === 'Activo',
+                    'bg-secondary': user.estatus === 'Inactivo',
+                    'bg-warning text-dark': user.estatus === 'Suspendido',
+                    'bg-danger': user.estatus === 'Cancelado'
+                  }">
+                    {{ user.estatus }}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card p-4 h-100 bg-light">
+            <h4><i class="bi bi-currency-dollar me-2"></i>Saldo Pendiente</h4>
+            <hr>
+            <div class="text-center">
+              <p class="fs-1 fw-bold text-danger">${{user.deuda}}</p>
+              <p class="text-muted">Esta es la cantidad pendiente de pago.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Mis Reportes -->
-    <div class="card p-4 mt-4">
-      <h4><i class="bi bi-chat-square-text me-2"></i>Mis Reportes</h4>
-      <div class="table-responsive">
-        <table class="table table-bordered table-striped mt-3">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Reporte</th>
-              <th>Estatus</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let reporte of misReportes">
-              <td>{{reporte.fecha | date:'dd/MM/yyyy'}}</td>
-              <td>{{reporte.mensaje}}</td>
-              <td>
-                <span class="badge" [ngClass]="getEstatusBadgeClass(reporte.estatus)">
-                  {{ getEstatusTexto(reporte.estatus) }}
-                </span>
-              </td>
-            </tr>
-            <tr *ngIf="misReportes.length === 0">
-              <td colspan="3" class="text-center">No has enviado reportes.</td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- VISTA: HISTORIAL DE PAGOS -->
+    <div *ngIf="vistaActual === 'pagos'">
+      <div class="card p-4">
+        <h4><i class="bi bi-clock-history me-2"></i>Historial de Pagos</h4>
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped mt-3">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Monto Pagado</th>
+                <th>Recibo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of user.recibos; let i = index">
+                <td>{{r.fecha | date:'longDate'}}</td>
+                <td>{{r.monto | currency}}</td>
+                <td>
+                  <button class="btn btn-info btn-sm" (click)="generarRecibo(r, i)">
+                    <i class="bi bi-file-earmark-pdf"></i> Descargar
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="!user.recibos || user.recibos.length === 0">
+                <td colspan="3" class="text-center">No hay pagos registrados.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- Reportar un Problema -->
-    <div class="card p-4 mt-4">
-      <h4><i class="bi bi-exclamation-triangle-fill me-2"></i>Reportar un Problema</h4>
-      <p class="text-muted">Tienes algum problema con el servicio? Envianos un reporte.</p>
-      <div class="form-group">
-        <textarea class="form-control" rows="3" placeholder="Describa su problema aqui..." [(ngModel)]="nuevoReporte"></textarea>
+    <!-- VISTA: MIS REPORTES -->
+    <div *ngIf="vistaActual === 'reportes'">
+      <div class="card p-4">
+        <h4><i class="bi bi-chat-square-text me-2"></i>Mis Reportes</h4>
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped mt-3">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Reporte</th>
+                <th>Estatus</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let reporte of misReportes">
+                <td>{{reporte.fecha | date:'dd/MM/yyyy'}}</td>
+                <td>{{reporte.mensaje}}</td>
+                <td>
+                  <span class="badge" [ngClass]="getEstatusBadgeClass(reporte.estatus)">
+                    {{ getEstatusTexto(reporte.estatus) }}
+                  </span>
+                </td>
+              </tr>
+              <tr *ngIf="misReportes.length === 0">
+                <td colspan="3" class="text-center">No has enviado reportes.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <button class="btn btn-danger mt-3 align-self-start" (click)="enviarReporte()">
-        <i class="bi bi-send-fill me-1"></i> Enviar Reporte
-      </button>
+
+      <!-- Reportar un Problema -->
+      <div class="card p-4 mt-4">
+        <h4><i class="bi bi-exclamation-triangle-fill me-2"></i>Enviar Nuevo Reporte</h4>
+        <p class="text-muted">Tienes algum problema con el servicio? Envianos un reporte.</p>
+        <div class="form-group">
+          <textarea class="form-control" rows="3" placeholder="Describa su problema aqui..." [(ngModel)]="nuevoReporte"></textarea>
+        </div>
+        <button class="btn btn-danger mt-3" (click)="enviarReporte()">
+          <i class="bi bi-send-fill me-1"></i> Enviar Reporte
+        </button>
+      </div>
     </div>
 
     <!-- Cerrar div de user content -->
