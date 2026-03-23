@@ -81,6 +81,38 @@ export class AdminDashboard implements OnInit {
   reporteSeleccionado: any = null;
   tecnicoSeleccionado: string = '';
 
+  // Variables para modal de edición de cliente
+  mostrarModalCliente: boolean = false;
+  clienteEditando: any = null;
+  clienteEditandoDatos: any = {
+    nombre: '',
+    telefono: '',
+    direccion: '',
+    localidad: '',
+    estatus: 'Activo',
+    paquete: 'basico',
+    precioPaquete: 200,
+    fechaInstalacion: ''
+  };
+
+  // Variables para modal de historial de pagos
+  mostrarModalHistorial: boolean = false;
+  clienteHistorial: any = null;
+  historialPagosCliente: any[] = [];
+  aniosConHistorial: number[] = [];
+  anioSeleccionado: number = 0;
+  nuevoPago: any = { mes: 1, anio: new Date().getFullYear(), monto: 0 };
+
+  // Lista de paquetes disponibles
+  paquetes: any[] = [
+    { clave: 'basico', nombre: 'Básico', precio: 200 },
+    { clave: 'estandar', nombre: 'Estándar', precio: 299 },
+    { clave: 'premium', nombre: 'Premium', precio: 449 }
+  ];
+
+  // Meses del año
+  meses: string[] = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
   constructor(
     private userService: UserService,
     private authService: AuthService,
@@ -316,6 +348,291 @@ export class AdminDashboard implements OnInit {
 
   generarRecibo(pago: any) {
     window.open(`http://localhost:5000/api/receipts/${pago.userId}/${pago.paymentId}`, '_blank');
+  }
+
+  // ==================== EDITAR CLIENTE ====================
+  
+  abrirModalEditarCliente(user: any) {
+    this.clienteEditando = user;
+    this.clienteEditandoDatos = {
+      nombre: user.nombre || '',
+      telefono: user.telefono || '',
+      direccion: user.direccion || '',
+      localidad: user.localidad || '',
+      estatus: user.estatus || 'Activo',
+      paquete: user.paquete || 'basico',
+      precioPaquete: user.precioPaquete || 200,
+      fechaInstalacion: user.fechaInstalacion ? new Date(user.fechaInstalacion).toISOString().split('T')[0] : ''
+    };
+    this.mostrarModalCliente = true;
+  }
+
+  cerrarModalEditarCliente() {
+    this.mostrarModalCliente = false;
+    this.clienteEditando = null;
+  }
+
+  guardarCambiosCliente() {
+    if (!this.clienteEditando) return;
+
+    this.userService.updateClientData(this.clienteEditando._id, {
+      nombre: this.clienteEditandoDatos.nombre,
+      telefono: this.clienteEditandoDatos.telefono,
+      direccion: this.clienteEditandoDatos.direccion,
+      localidad: this.clienteEditandoDatos.localidad,
+      estatus: this.clienteEditandoDatos.estatus,
+      paquete: this.clienteEditandoDatos.paquete,
+      precioPaquete: this.clienteEditandoDatos.precioPaquete,
+      fechaInstalacion: this.clienteEditandoDatos.fechaInstalacion || null
+    }).subscribe({
+      next: (userActualizado) => {
+        // Actualizar en la lista local
+        const index = this.rawData.findIndex(u => u._id === this.clienteEditando._id);
+        if (index >= 0) {
+          this.rawData[index] = { ...this.rawData[index], ...userActualizado };
+        }
+        this.cerrarModalEditarCliente();
+        this.recargarDatos();
+        alert('Cliente actualizado correctamente');
+      },
+      error: (err) => {
+        alert('Error al actualizar cliente: ' + (err.error?.error || err.message));
+      }
+    });
+  }
+
+  cambiarPaquete() {
+    const paqueteSeleccionado = this.paquetes.find(p => p.clave === this.clienteEditandoDatos.paquete);
+    if (paqueteSeleccionado) {
+      this.clienteEditandoDatos.precioPaquete = paqueteSeleccionado.precio;
+    }
+  }
+
+  // ==================== HISTORIAL DE PAGOS ====================
+
+  // Modal de detalles del cliente
+  mostrarModalDetalles: boolean = false;
+  clienteDetalles: any = null;
+  mesesGenerados: any[] = [];
+
+  abrirModalDetalles(user: any) {
+    this.clienteDetalles = user;
+    this.generarMesesDesdeInstalacion(user);
+    this.mostrarModalDetalles = true;
+  }
+
+  abrirModalHistorialPagos(user: any) {
+    this.clienteHistorial = user;
+    this.historialPagosCliente = [];
+    this.aniosConHistorial = [];
+    this.anioSeleccionado = 0;
+    
+    // Generar años desde instalación
+    if (user.fechaInstalacion) {
+      const fechaInst = new Date(user.fechaInstalacion);
+      const anioInicio = fechaInst.getFullYear();
+      const anioActual = new Date().getFullYear();
+      for (let a = anioInicio; a <= anioActual; a++) {
+        this.aniosConHistorial.push(a);
+      }
+    } else {
+      // Si no hay fecha de instalación, usar año actual
+      this.aniosConHistorial.push(new Date().getFullYear());
+    }
+    
+    // Cargar historial de pagosdel cliente
+    this.userService.getUserById(user._id).subscribe({
+      next: (cliente) => {
+        if (cliente.historialPagos && cliente.historialPagos.length > 0) {
+          // Agrupar pagos por año
+          const grupos: { [key: number]: any[] } = {};
+          for (const pago of cliente.historialPagos) {
+            const anio = pago.ano || new Date().getFullYear();
+            if (!grupos[anio]) {
+              grupos[anio] = [];
+            }
+            grupos[anio].push(pago);
+          }
+          // Convertir a array
+          this.historialPagosCliente = Object.keys(grupos).sort((a, b) => Number(b) - Number(a)).map(anio => ({
+            ano: Number(anio),
+            meses: grupos[Number(anio)].sort((a, b) => a.mes - b.mes)
+          }));
+        } else {
+          this.historialPagosCliente = [];
+        }
+        this.cdr.markForCheck();
+      },
+      error: (err) => console.error('Error al cargar historial:', err)
+    });
+    
+    this.mostrarModalHistorial = true;
+  }
+
+  cerrarModalDetalles() {
+    this.mostrarModalDetalles = false;
+    this.clienteDetalles = null;
+    this.mesesGenerados = [];
+  }
+
+  generarMesesDesdeInstalacion(user: any) {
+    const fechaInstalacion = user.fechaInstalacion ? new Date(user.fechaInstalacion) : new Date();
+    const anoInicio = fechaInstalacion.getFullYear();
+    const mesInicio = fechaInstalacion.getMonth(); // 0-11
+    const anoActual = new Date().getFullYear();
+    const mesActual = new Date().getMonth();
+
+    const mesesNombres = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const historialExistente = user.historialPagos || [];
+
+    this.mesesGenerados = [];
+
+    for (let ano = anoInicio; ano <= anoActual; ano++) {
+      for (let mes = (ano === anoInicio ? mesInicio : 0); mes < 12; mes++) {
+        if (ano === anoActual && mes > mesActual) break;
+
+        // Buscar si ya existe el pago
+        const pagoExistente = historialExistente.find((p: any) => p.mes === mes + 1 && p.año === ano);
+
+        // Determinar estatus del mes
+        let estatus = 'pendiente';
+        if (pagoExistente) {
+          estatus = 'pagado';
+        } else if (ano < anoActual || (ano === anoActual && mes < mesActual)) {
+          // Meses anteriores que no han sido pagados
+          estatus = 'atrasado';
+        }
+
+        this.mesesGenerados.push({
+          mes: mes + 1,
+          ano: ano,
+          nombreMes: mesesNombres[mes],
+          monto: user.precioPaquete || 200,
+          estatus: estatus,
+          fechaPago: pagoExistente ? pagoExistente.fechaPago : null
+        });
+      }
+    }
+
+    // Invertir para mostrar del más reciente al más antiguo
+    this.mesesGenerados.reverse();
+  }
+
+  registrarPagoMes(mesPago: any) {
+    if (!this.clienteDetalles) return;
+
+    this.userService.registrarPago(this.clienteDetalles._id, mesPago.mes, mesPago.ano, mesPago.monto).subscribe({
+      next: (res) => {
+        // Actualizar el mes en la lista local
+        mesPago.estatus = 'pagado';
+        mesPago.fechaPago = new Date();
+        // Actualizar la deuda del cliente
+        this.clienteDetalles.deuda = Math.max(0, (this.clienteDetalles.deuda || 0) - mesPago.monto);
+        alert('Pago registrado correctamente');
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Error al registrar pago:', err);
+        alert('Error al registrar pago');
+      }
+    });
+  }
+
+  eliminarPagoMes(mesPago: any) {
+    if (!this.clienteDetalles) return;
+    if (!confirm('¿Está seguro de eliminar este pago?')) return;
+
+    // Buscar índice en el historial
+    const index = this.clienteDetalles.historialPagos?.findIndex((p: any) =>
+      p.mes === mesPago.mes && p.año === mesPago.ano
+    );
+
+    if (index !== undefined && index >= 0) {
+      this.userService.eliminarPago(this.clienteDetalles._id, index).subscribe({
+        next: (res) => {
+          mesPago.estatus = mesPago.ano < new Date().getFullYear() ||
+            (mesPago.ano === new Date().getFullYear() && mesPago.mes < new Date().getMonth())
+            ? 'atrasado' : 'pendiente';
+          mesPago.fechaPago = null;
+          this.clienteDetalles.deuda = (this.clienteDetalles.deuda || 0) + mesPago.monto;
+          alert('Pago eliminado correctamente');
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          console.error('Error al eliminar pago:', err);
+          alert('Error al eliminar pago');
+        }
+      });
+    }
+  }
+
+  cerrarModalHistorial() {
+    this.mostrarModalHistorial = false;
+    this.clienteHistorial = null;
+    this.historialPagosCliente = [];
+    this.aniosConHistorial = [];
+  }
+
+  cargarHistorialPagos() {
+    if (!this.clienteHistorial) return;
+
+    const anioParam = this.anioSeleccionado > 0 ? this.anioSeleccionado : undefined;
+    this.userService.getPaymentHistoryByYear(this.clienteHistorial._id, anioParam).subscribe({
+      next: (res) => {
+        this.historialPagosCliente = res.historial;
+        // Extraer años únicos si es vista grouped
+        if (this.anioSeleccionado === 0 && Array.isArray(this.historialPagosCliente)) {
+          this.aniosConHistorial = this.historialPagosCliente.map((h: any) => h.anio);
+        }
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Error al cargar historial:', err);
+        alert('Error al cargar historial de pagos');
+      }
+    });
+  }
+
+  filtrarPorAnio() {
+    this.cargarHistorialPagos();
+  }
+
+  registrarPago(mes: number, año: number) {
+    const monto = prompt('Ingrese el monto del pago:', String(this.clienteHistorial?.precioPaquete || 200));
+    if (!monto || isNaN(Number(monto)) || Number(monto) <= 0) {
+      alert('Monto inválido');
+      return;
+    }
+
+    this.userService.registerPayment(this.clienteHistorial._id, {
+      mes: mes,
+      año: año,
+      monto: Number(monto)
+    }).subscribe({
+      next: () => {
+        alert('Pago registrado correctamente');
+        this.cargarHistorialPagos();
+        this.recargarDatos();
+      },
+      error: (err) => {
+        alert('Error al registrar pago: ' + (err.error?.error || err.message));
+      }
+    });
+  }
+
+  eliminarPago(pago: any, index: number) {
+    if (!confirm('¿Está seguro de eliminar este pago?')) return;
+
+    this.userService.deletePayment(this.clienteHistorial._id, index).subscribe({
+      next: () => {
+        alert('Pago eliminado');
+        this.cargarHistorialPagos();
+        this.recargarDatos();
+      },
+      error: (err) => {
+        alert('Error al eliminar pago');
+      }
+    });
   }
 
   // Atender un reporte (marcar como atendido)

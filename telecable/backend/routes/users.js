@@ -166,4 +166,182 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+// PUT - Actualizar datos del cliente (estatus, paquete, fecha instalacion)
+router.put("/:id/datos", async (req, res) => {
+  try {
+    const { estatus, paquete, precioPaquete, fechaInstalacion, nombre, telefono, direccion, localidad } = req.body;
+    
+    const updateData = {};
+    if (estatus) updateData.estatus = estatus;
+    if (paquete) updateData.paquete = paquete;
+    if (precioPaquete !== undefined) updateData.precioPaquete = precioPaquete;
+    if (fechaInstalacion) updateData.fechaInstalacion = new Date(fechaInstalacion);
+    if (nombre) updateData.nombre = nombre;
+    if (telefono) updateData.telefono = telefono;
+    if (direccion) updateData.direccion = direccion;
+    if (localidad) updateData.localidad = localidad;
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+    
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// PUT - Registrar pago en historial de pagos
+router.put("/:id/pago", async (req, res) => {
+  try {
+    const { mes, año, monto } = req.body;
+    
+    if (!mes || !año || !monto) {
+      return res.status(400).json({ error: "Mes, año y monto son requeridos" });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // Inicializar historialPagos si no existe
+    if (!user.historialPagos) {
+      user.historialPagos = [];
+    }
+
+    // Buscar si ya existe un registro para ese mes/año
+    const existingIndex = user.historialPagos.findIndex(
+      p => p.mes === mes && p.año === año
+    );
+
+    const nuevoPago = {
+      mes: mes,
+      año: año,
+      monto: monto,
+      fechaPago: new Date(),
+      status: 'pagado',
+      fechaLimite: new Date(año, mes - 1, 10) // 10 de cada mes
+    };
+
+    if (existingIndex >= 0) {
+      // Actualizar pago existente
+      user.historialPagos[existingIndex] = nuevoPago;
+    } else {
+      // Agregar nuevo pago
+      user.historialPagos.push(nuevoPago);
+    }
+
+    // Actualizar deuda
+    user.deuda = Math.max(0, (user.deuda || 0) - monto);
+    if (user.deuda === 0) {
+      user.estatus = "Activo";
+    }
+
+    await user.save();
+    res.json(user);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// GET - Obtener historial de pagos (todos los años)
+router.get("/:id/historial", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    let historial = user.historialPagos || [];
+    
+    // Agrupar por año
+    const grouped = {};
+    historial.forEach(p => {
+      if (!grouped[p.año]) grouped[p.año] = [];
+      grouped[p.año].push(p);
+    });
+    // Ordenar años descending
+    const añosOrdenados = Object.keys(grouped).sort((a, b) => b - a);
+    historial = añosOrdenados.map(a => ({ anio: parseInt(a), meses: grouped[a].sort((x, y) => x.mes - y.mes) }));
+
+    res.json({
+      usuario: {
+        _id: user._id,
+        numero: user.numero,
+        nombre: user.nombre,
+        paquete: user.paquete,
+        precioPaquete: user.precioPaquete,
+        fechaInstalacion: user.fechaInstalacion
+      },
+      historial: historial
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// GET - Obtener historial de pagos de un año específico
+router.get("/:id/historial/:año", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    const año = parseInt(req.params.año);
+    let historial = user.historialPagos || [];
+    historial = historial.filter(p => p.año === año);
+    // Ordenar por mes
+    historial.sort((a, b) => a.mes - b.mes);
+    // Cambiar nombre de campo año a anio para compatibilidad con Angular
+    historial = historial.map(p => ({ ...p, anio: p.año }));
+
+    res.json({
+      usuario: {
+        _id: user._id,
+        numero: user.numero,
+        nombre: user.nombre,
+        paquete: user.paquete,
+        precioPaquete: user.precioPaquete,
+        fechaInstalacion: user.fechaInstalacion
+      },
+      historial: historial
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// PUT - Eliminar un pago del historial
+router.delete("/:id/pago/:index", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    const index = parseInt(req.params.index);
+    if (isNaN(index) || index < 0 || index >= (user.historialPagos?.length || 0)) {
+      return res.status(400).json({ error: "Índice de pago inválido" });
+    }
+
+    const pagoEliminado = user.historialPagos[index];
+    user.historialPagos.splice(index, 1);
+    
+    // Restaurar deuda
+    user.deuda = (user.deuda || 0) + pagoEliminado.monto;
+
+    await user.save();
+    res.json(user);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 module.exports = router;

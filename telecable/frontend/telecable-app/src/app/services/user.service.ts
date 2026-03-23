@@ -101,4 +101,40 @@ export class UserService {
   deleteUser(id: string): Observable<any> {
     return this.http.delete<any>(`${this.api}/${id}`);
   }
+
+  /** Actualizar datos del cliente (estatus, paquete, fecha instalación) */
+  updateClientData(id: string, data: any): Observable<any> {
+    return this.http.put<any>(`${this.api}/${id}/datos`, data);
+  }
+
+  /** Registrar pago en historial */
+  registerPayment(id: string, data: { mes: number; año: number; monto: number }): Observable<any> {
+    return this.http.put<any>(`${this.api}/${id}/pago`, data);
+  }
+
+  /** Obtener historial de pagos (todos los años) */
+  getPaymentHistory(id: string): Observable<any> {
+    return this.http.get<any>(`${this.api}/${id}/historial`);
+  }
+
+  /** Obtener historial de pagos de un año específico (si no se especifica, devuelve todos los años agrupados) */
+  getPaymentHistoryByYear(id: string, año?: number): Observable<any> {
+    const url = año ? `${this.api}/${id}/historial/${año}` : `${this.api}/${id}/historial`;
+    return this.http.get<any>(url);
+  }
+
+  /** Registrar un pago */
+  registrarPago(id: string, mes: number, año: number, monto: number): Observable<any> {
+    return this.http.put<any>(`${this.api}/${id}/pago`, { mes, año, monto });
+  }
+
+  /** Eliminar un pago */
+  eliminarPago(id: string, index: number): Observable<any> {
+    return this.http.delete<any>(`${this.api}/${id}/pago/${index}`);
+  }
+
+  /** Eliminar un pago del historial */
+  deletePayment(id: string, index: number): Observable<any> {
+    return this.http.delete<any>(`${this.api}/${id}/pago/${index}`);
+  }
 }

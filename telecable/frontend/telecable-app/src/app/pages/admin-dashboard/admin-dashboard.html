@@ -178,45 +178,31 @@
         <table class="table table-bordered table-hover">
           <thead class="table-dark">
             <tr>
-              <th>Numero</th>
+              <th>Contrato</th>
               <th>Nombre</th>
-              <th>Telefono</th>
-              <th>Localidad</th>
-              <th>Estatus</th>
-              <th>Deuda</th>
-              <th>Acciones</th>
-              <th></th>
+              <th>Detalles</th>
+              <th>Pagos</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let u of usersFiltrados">
               <td>{{u.numero}}</td>
-              <td>{{u.nombre}}</td>
-              <td>{{u.telefono}}</td>
-              <td>{{u.localidad}}</td>
               <td>
-                <select class="form-select form-select-sm" [value]="u.estatus" (change)="estatus(u, $event)">
-                  <option value="Activo">Activo</option>
-                  <option value="Suspendido">Suspendido</option>
-                  <option value="Cancelado">Cancelado</option>
-                </select>
-              </td>
-              <td class="text-danger">${{u.deuda}}</td>
-              <td>
-                <div class="input-group input-group-sm">
-                  <input type="number" class="form-control" placeholder="Monto" [(ngModel)]="u.mov" min="0">
-                  <button class="btn btn-outline-primary" (click)="sumar(u)">+</button>
-                  <input type="number" class="form-control" placeholder="Pago" [(ngModel)]="u.pago" min="0">
-                  <button class="btn btn-outline-success" (click)="pagar(u)">$</button>
-                </div>
+                <a href="javascript:void(0)" (click)="abrirModalDetalles(u)" class="text-primary text-decoration-none fw-bold">{{u.nombre}}</a>
               </td>
               <td>
-                <button class="btn btn-sm btn-warning me-1" (click)="editarCliente(u)" title="Editar">✏️</button>
-                <button class="btn btn-sm btn-danger" (click)="eliminarUsuario(u)" title="Eliminar">🗑️</button>
+                <button class="btn btn-sm btn-primary" (click)="abrirModalDetalles(u)" title="Ver Datos del Cliente">
+                  <i class="bi bi-person-circle"></i> Datos
+                </button>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-info" (click)="abrirModalHistorialPagos(u)" title="Ver Historial de Pagos">
+                  <i class="bi bi-calendar-check"></i> Pagos
+                </button>
               </td>
             </tr>
             <tr *ngIf="usersFiltrados.length === 0">
-              <td colspan="8" class="text-center">No se encontraron resultados.</td>
+              <td colspan="4" class="text-center">No se encontraron resultados.</td>
             </tr>
           </tbody>
         </table>
@@ -633,6 +619,254 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDITAR CLIENTE -->
+<div class="modal fade" id="modalEditarCliente" tabindex="-1" [class.show]="mostrarModalCliente" [style.display]="mostrarModalCliente ? 'block' : 'none'">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">📝 Editar Cliente</h5>
+        <button type="button" class="btn-close btn-close-white" (click)="cerrarModalEditarCliente()"></button>
+      </div>
+      <div class="modal-body" *ngIf="clienteEditando">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Número de Contrato</label>
+            <input type="text" class="form-control" [value]="clienteEditando.numero" disabled>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Estatus</label>
+            <select class="form-select" [(ngModel)]="clienteEditandoDatos.estatus">
+              <option value="Activo">Activo</option>
+              <option value="Suspendido">Suspendido</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Nombre Completo</label>
+            <input type="text" class="form-control" [(ngModel)]="clienteEditandoDatos.nombre">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Teléfono</label>
+            <input type="text" class="form-control" [(ngModel)]="clienteEditandoDatos.telefono">
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Dirección</label>
+            <input type="text" class="form-control" [(ngModel)]="clienteEditandoDatos.direccion">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Localidad</label>
+            <input type="text" class="form-control" [(ngModel)]="clienteEditandoDatos.localidad">
+          </div>
+        </div>
+        <hr>
+        <h5 class="mb-3">📦 Información del Servicio</h5>
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Paquete</label>
+            <select class="form-select" [(ngModel)]="clienteEditandoDatos.paquete" (change)="cambiarPaquete()">
+              <option *ngFor="let p of paquetes" [value]="p.clave">{{p.nombre}} - ${{p.precio}}</option>
+            </select>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Precio Mensual</label>
+            <input type="number" class="form-control" [(ngModel)]="clienteEditandoDatos.precioPaquete">
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Fecha de Instalación</label>
+            <input type="date" class="form-control" [(ngModel)]="clienteEditandoDatos.fechaInstalacion">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cerrarModalEditarCliente()">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="guardarCambiosCliente()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: HISTORIAL DE PAGOS -->
+<div class="modal fade" id="modalHistorial" tabindex="-1" [class.show]="mostrarModalHistorial" [style.display]="mostrarModalHistorial ? 'block' : 'none'">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">📅 Historial de Pagos - {{clienteHistorial?.nombre}}</h5>
+        <button type="button" class="btn-close btn-close-white" (click)="cerrarModalHistorial()"></button>
+      </div>
+      <div class="modal-body" *ngIf="clienteHistorial">
+        <div class="row mb-3">
+          <div class="col-md-3">
+            <strong>Contrato:</strong> {{clienteHistorial.numero}}
+          </div>
+          <div class="col-md-3">
+            <strong>Nombre:</strong> {{clienteHistorial.nombre}}
+          </div>
+          <div class="col-md-3">
+            <strong>Estatus:</strong> <span class="badge" [class.bg-success]="clienteHistorial.estatus === 'Activo'" [class.bg-warning]="clienteHistorial.estatus === 'Suspendido'" [class.bg-danger]="clienteHistorial.estatus === 'Cancelado'">{{clienteHistorial.estatus}}</span>
+          </div>
+          <div class="col-md-3">
+            <strong>Paquete:</strong> {{clienteHistorial.paquete || 'basico'}} (${{clienteHistorial.precioPaquete || 200}})
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Filtrar por Anio:</label>
+            <select class="form-select" [(ngModel)]="anioSeleccionado" (change)="filtrarPorAnio()">
+              <option [value]="0">Todos los anios</option>
+              <option *ngFor="let a of aniosConHistorial" [value]="a">{{a}}</option>
+            </select>
+          </div>
+        </div>
+        <div *ngIf="anioSeleccionado === 0">
+          <div *ngFor="let grupo of historialPagosCliente" class="mb-4">
+            <h5 class="text-primary">📆 Anio {{grupo.anio}}</h5>
+            <table class="table table-bordered table-striped">
+              <thead class="table-dark">
+                <tr><th>Mes</th><th>Monto</th><th>Fecha</th><th>Estatus</th><th>Acciones</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let p of grupo.meses; let i = index">
+                  <td>{{meses[p.mes - 1]}}</td>
+                  <td>${{p.monto}}</td>
+                  <td>{{p.fechaPago | date:'dd/MM/yyyy'}}</td>
+                  <td>
+                    <span class="badge" [class.bg-success]="p.status === 'pagado'" [class.bg-warning]="p.status === 'pendiente'" [class.bg-danger]="p.status === 'atrasado'">{{p.status}}</span>
+                  </td>
+                  <td>
+                    <button *ngIf="p.status !== 'pagado'" class="btn btn-sm btn-success" (click)="registrarPago(p.mes, p.anio)">Pagar</button>
+                    <button *ngIf="p.status === 'pagado'" class="btn btn-sm btn-danger" (click)="eliminarPago(p, i)">Eliminar</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div *ngIf="anioSeleccionado > 0">
+          <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+              <tr><th>Mes</th><th>Monto</th><th>Fecha</th><th>Estatus</th><th>Acciones</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of historialPagosCliente; let i = index">
+                <td>{{meses[p.mes - 1]}}</td>
+                <td>${{p.monto}}</td>
+                <td>{{p.fechaPago | date:'dd/MM/yyyy'}}</td>
+                <td>
+                  <span class="badge" [class.bg-success]="p.status === 'pagado'" [class.bg-warning]="p.status === 'pendiente'" [class.bg-danger]="p.status === 'atrasado'">{{p.status}}</span>
+                </td>
+                <td>
+                  <button *ngIf="p.status !== 'pagado'" class="btn btn-sm btn-success" (click)="registrarPago(p.mes, p.anio)">Pagar</button>
+                  <button *ngIf="p.status === 'pagado'" class="btn btn-sm btn-danger" (click)="eliminarPago(p, i)">Eliminar</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="historialPagosCliente.length === 0" class="text-center py-4">
+          <p class="text-muted">No hay historial de pagos.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cerrarModalHistorial()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DETALLES DEL CLIENTE -->
+<div class="modal fade" id="modalDetalles" tabindex="-1" [class.show]="mostrarModalDetalles" [style.display]="mostrarModalDetalles ? 'block' : 'none'">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">📋 Detalles del Cliente - {{clienteDetalles?.nombre}}</h5>
+        <button type="button" class="btn-close btn-close-white" (click)="cerrarModalDetalles()"></button>
+      </div>
+      <div class="modal-body" *ngIf="clienteDetalles">
+        <!-- Informacion del Cliente -->
+        <div class="card mb-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">📄 Informacion del Cliente</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-3 mb-2">
+                <strong>Contrato:</strong> {{clienteDetalles.numero}}
+              </div>
+              <div class="col-md-3 mb-2">
+                <strong>Nombre:</strong> {{clienteDetalles.nombre}}
+              </div>
+              <div class="col-md-3 mb-2">
+                <strong>Estatus:</strong> 
+                <span class="badge" [class.bg-success]="clienteDetalles.estatus === 'Activo'" [class.bg-warning]="clienteDetalles.estatus === 'Suspendido'" [class.bg-danger]="clienteDetalles.estatus === 'Cancelado'">{{clienteDetalles.estatus}}</span>
+              </div>
+              <div class="col-md-3 mb-2">
+                <strong>Fecha de Instalacion:</strong> {{clienteDetalles.fechaInstalacion | date:'dd/MM/yyyy'}}
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-3 mb-2">
+                <strong>Paquete:</strong> {{clienteDetalles.paquete || 'basico'}}
+              </div>
+              <div class="col-md-3 mb-2">
+                <strong>Precio Mensual:</strong> ${{clienteDetalles.precioPaquete || 200}}
+              </div>
+              <div class="col-md-3 mb-2">
+                <strong>Deuda Total:</strong> <span class="text-danger">${{clienteDetalles.deuda || 0}}</span>
+              </div>
+              <div class="col-md-3 mb-2">
+                <strong>Localidad:</strong> {{clienteDetalles.localidad}}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Historial de Pagos -->
+        <div class="card">
+          <div class="card-header bg-success text-white">
+            <h5 class="mb-0">📅 Historial de Pagos</h5>
+          </div>
+          <div class="card-body">
+            <table class="table table-bordered table-striped table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th>Mes</th>
+                  <th>Año</th>
+                  <th>Monto</th>
+                  <th>Estatus</th>
+                  <th>Fecha de Pago</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let mes of mesesGenerados">
+                  <td>{{mes.nombreMes}}</td>
+                  <td>{{mes.ano}}</td>
+                  <td>${{mes.monto}}</td>
+                  <td>
+                    <span class="badge" [class.bg-success]="mes.estatus === 'pagado'" [class.bg-warning]="mes.estatus === 'pendiente'" [class.bg-danger]="mes.estatus === 'atrasado'">{{mes.estatus}}</span>
+                  </td>
+                  <td>{{mes.fechaPago ? (mes.fechaPago | date:'dd/MM/yyyy') : '-'}}</td>
+                  <td>
+                    <button *ngIf="mes.estatus !== 'pagado'" class="btn btn-sm btn-success" (click)="registrarPagoMes(mes)">Pagar</button>
+                    <button *ngIf="mes.estatus === 'pagado'" class="btn btn-sm btn-danger" (click)="eliminarPagoMes(mes)">Eliminar</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cerrarModalDetalles()">Cerrar</button>
       </div>
     </div>
   </div>

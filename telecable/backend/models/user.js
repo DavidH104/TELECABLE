@@ -80,6 +80,37 @@ const userSchema = new mongoose.Schema({
 
   direccion: String,
 
+  // Nuevo: Paquete del servicio
+  paquete: {
+    type: String,
+    enum: ['basico', 'estandar', 'premium', 'custom'],
+    default: 'basico'
+  },
+  precioPaquete: {
+    type: Number,
+    default: 200
+  },
+
+  // Nuevo: Fecha de instalación
+  fechaInstalacion: {
+    type: Date,
+    default: null
+  },
+
+  // Nuevo: Historial de pagos por mes/año
+  historialPagos: [{
+    mes: Number,      // 1-12
+    año: Number,      // 2024, 2025, etc.
+    monto: Number,
+    fechaPago: Date,
+    status: {
+      type: String,
+      enum: ['pagado', 'pendiente', 'atrasado'],
+      default: 'pendiente'
+    },
+    fechaLimite: Date
+  }],
+
   reportes: [reporteSchema],
 
   mensajesAdmin: [mensajeAdminSchema],
@@ -98,8 +129,9 @@ const userSchema = new mongoose.Schema({
     observaciones: String
   }
 
-},{
-  collection:'clientes'
+},
+{
+  collection: 'clientes'
 })
 
 userSchema.set('toJSON', {
