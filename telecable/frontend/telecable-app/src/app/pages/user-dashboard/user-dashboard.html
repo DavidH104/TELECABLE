@@ -93,23 +93,34 @@
           <table class="table table-bordered table-striped mt-3">
             <thead>
               <tr>
-                <th>Fecha</th>
-                <th>Monto Pagado</th>
+                <th>Mes</th>
+                <th>Anio</th>
+                <th>Monto</th>
+                <th>Fecha de Pago</th>
+                <th>Estatus</th>
                 <th>Recibo</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let r of user.recibos; let i = index">
-                <td>{{r.fecha | date:'longDate'}}</td>
-                <td>{{r.monto | currency}}</td>
+              <tr *ngFor="let r of user.historialPagos; let i = index">
+                <td>{{ getMesNombre(r.mes) }}</td>
+                <td>{{ r['ano'] || r['año'] || r.ano }}</td>
+                <td>${{ r.monto }}</td>
+                <td>{{ r.fechaPago ? (r.fechaPago | date:'longDate') : '-' }}</td>
                 <td>
-                  <button class="btn btn-info btn-sm" (click)="generarRecibo(r, i)">
+                  <span class="badge" [class.bg-success]="r.status === 'pagado'" [class.bg-warning]="r.status === 'pendiente'" [class.bg-danger]="r.status === 'atrasado'">
+                    {{ r.status | uppercase }}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn btn-info btn-sm" *ngIf="r.status === 'pagado'" (click)="generarRecibo(r, i)">
                     <i class="bi bi-file-earmark-pdf"></i> Descargar
                   </button>
+                  <span *ngIf="r.status !== 'pagado'" class="text-muted">-</span>
                 </td>
               </tr>
-              <tr *ngIf="!user.recibos || user.recibos.length === 0">
-                <td colspan="3" class="text-center">No hay pagos registrados.</td>
+              <tr *ngIf="!user.historialPagos || user.historialPagos.length === 0">
+                <td colspan="6" class="text-center">No hay pagos registrados.</td>
               </tr>
             </tbody>
           </table>

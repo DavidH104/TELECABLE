@@ -25,7 +25,40 @@ router.post("/", async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const reportes = await Report.find().sort({ fecha: -1 })
+    // Primero intentar obtener de la coleccion Report
+    let reportes = await Report.find().sort({ fecha: -1 });
+    
+    // Si no hay reportes en la coleccion, buscar en User
+    if (reportes.length === 0) {
+      const usuarios = await User.find(
+        { 'reportes.0': { $exists: true } },
+        { numero: 1, nombre: 1, localidad: 1, reportes: 1 }
+      );
+      
+      let reportesUser = [];
+      usuarios.forEach(usuario => {
+        usuario.reportes.forEach(reporte => {
+          reportesUser.push({
+            _id: reporte._id,
+            usuarioId: usuario._id,
+            clienteId: usuario._id,
+            clienteNumero: usuario.numero,
+            clienteNombre: usuario.nombre,
+            clienteLocalidad: usuario.localidad,
+            tipo: reporte.tipo,
+            mensaje: reporte.mensaje,
+            fecha: reporte.fecha,
+            estatus: reporte.estatus,
+            prioridad: reporte.prioridad,
+            tecnicoAsignado: reporte.tecnicoAsignado,
+            tecnicoNombre: reporte.tecnicoNombre
+          });
+        });
+      });
+      
+      return res.json(reportesUser);
+    }
+    
     res.json(reportes)
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -121,35 +154,55 @@ router.put("/:id", async (req, res) => {
 
 router.put("/:id/asignar-tecnico", async (req, res) => {
   try {
-    const { tecnicoId, tecnicoNombre, clienteId } = req.body
+    const { tecnicoId, tecnicoNombre, clienteId } = req.body;
     
-    const updateData = {
-      tecnicoAsignado: tecnicoId,
-      tecnicoNombre: tecnicoNombre,
-      estatus: 'asignado',
-      enviadoATecnico: true
-    };
+    // Primero intentar en la coleccion Report
+    let reporteEnColeccion = await Report.findById(req.params.id);
+    if (reporteEnColeccion) {
+      reporteEnColeccion.tecnicoAsignado = tecnicoId;
+      reporteEnColeccion.tecnicoNombre = tecnicoNombre;
+      reporteEnColeccion.estatus = 'Asignado';
+      await reporteEnColeccion.save();
+      return res.json({ mensaje: 'Reporte asignado', reporte: reporteEnColeccion });
+    }
     
-    const report = await Report.findByIdAndUpdate(
-      req.params.id,
-      { $set: updateData },
-      { new: true }
-    );
-    
+    // Los reportes también pueden estar embebidos en User, buscar y actualizar ahí
     if (clienteId) {
-      await User.updateOne(
+      const usuario = await User.findOneAndUpdate(
         { _id: clienteId, 'reportes._id': req.params.id },
         { $set: {
           'reportes.$.tecnicoAsignado': tecnicoId,
           'reportes.$.tecnicoNombre': tecnicoNombre,
           'reportes.$.estatus': 'Asignado'
-        }}
+        }},
+        { new: true }
       );
+      
+      if (usuario) {
+        const reporteActualizado = usuario.reportes.id(req.params.id);
+        return res.json({ mensaje: 'Reporte asignado', reporte: reporteActualizado });
+      }
     }
     
-    res.json(report)
+    // Si no hay clienteId, intentar buscar en todos los usuarios
+    const resultado = await User.findOneAndUpdate(
+      { 'reportes._id': req.params.id },
+      { $set: {
+        'reportes.$.tecnicoAsignado': tecnicoId,
+        'reportes.$.tecnicoNombre': tecnicoNombre,
+        'reportes.$.estatus': 'Asignado'
+      }},
+      { new: true }
+    );
+    
+    if (resultado) {
+      const reporteActualizado = resultado.reportes.id(req.params.id);
+      return res.json({ mensaje: 'Reporte asignado', reporte: reporteActualizado });
+    }
+    
+    res.status(404).json({ error: 'Reporte no encontrado' });
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ error: error.message });
   }
 })
 

@@ -2,7 +2,18 @@
 
 <div class="navbar-content">
 
-<h2 class="titulo">TELECABLE</h2>
+<a routerLink="/" class="brand">
+  <h2 class="titulo">TELECABLE</h2>
+</a>
+
+<div class="nav-links">
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+    Inicio
+  </a>
+  <a routerLink="/login" routerLinkActive="active" class="nav-link login-link">
+    Login
+  </a>
+</div>
 
 </div>
 

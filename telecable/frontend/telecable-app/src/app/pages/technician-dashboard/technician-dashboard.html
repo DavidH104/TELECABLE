@@ -57,6 +57,7 @@
                 <th>Descripción</th>
                 <th>Prioridad</th>
                 <th>Estatus</th>
+                <th>Fecha de Atención</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -82,13 +83,21 @@
                   </span>
                 </td>
                 <td>
+                  <span *ngIf="reporte.fechaAtencion">
+                    {{reporte.fechaAtencion | date:'dd/MM/yyyy HH:mm'}}
+                  </span>
+                  <span *ngIf="!reporte.fechaAtencion" class="text-muted">
+                    No programada
+                  </span>
+                </td>
+                <td>
                   <button class="btn btn-primary btn-sm" (click)="abrirModal(reporte)">
                     <i class="bi bi-pencil"></i> Actualizar
                   </button>
                 </td>
               </tr>
               <tr *ngIf="misReportes.length === 0">
-                <td colspan="7" class="text-center py-4">
+                <td colspan="8" class="text-center py-4">
                   <i class="bi bi-inbox fs-1 text-muted"></i>
                   <p class="mt-2">No tienes trabajos asignados</p>
                 </td>
@@ -139,6 +148,7 @@
                 <th>Descripción</th>
                 <th>Prioridad</th>
                 <th>Estatus</th>
+                <th>Fecha de Atención</th>
                 <th>Técnico</th>
                 <th>Acciones</th>
               </tr>
@@ -165,6 +175,14 @@
                     {{reporte.estatus}}
                   </span>
                 </td>
+                <td>
+                  <span *ngIf="reporte.fechaAtencion">
+                    {{reporte.fechaAtencion | date:'dd/MM/yyyy HH:mm'}}
+                  </span>
+                  <span *ngIf="!reporte.fechaAtencion" class="text-muted">
+                    No programada
+                  </span>
+                </td>
                 <td>{{reporte.tecnicoNombre || 'Sin asignar'}}</td>
                 <td>
                   <button class="btn btn-warning btn-sm" (click)="asignarme(reporte)" *ngIf="!reporte.tecnicoAsignado">
@@ -176,7 +194,7 @@
                 </td>
               </tr>
               <tr *ngIf="reportesFiltrados.length === 0">
-                <td colspan="9" class="text-center py-4">
+                <td colspan="10" class="text-center py-4">
                   <i class="bi bi-inbox fs-1 text-muted"></i>
                   <p class="mt-2">No hay reportes</p>
                 </td>

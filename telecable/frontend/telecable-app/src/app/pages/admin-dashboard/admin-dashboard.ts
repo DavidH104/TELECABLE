@@ -6,6 +6,7 @@ import { AuthService } from '../../services/auth.service';
 import { TechnicianService } from '../../services/technician.service';
 import { ReportService } from '../../services/report.service';
 import { PreregistroService } from '../../services/preregistro.service';
+import { ConfigService } from '../../services/config.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -76,6 +77,30 @@ export class AdminDashboard implements OnInit {
   preregistros: any[] = [];
   preregistrosPendientes: number = 0;
   preregistroSeleccionado: any = null;
+  
+  // Promociones
+  promociones: any[] = [];
+  mostrarFormularioPromocion: boolean = false;
+  nuevaPromocion: any = {
+    titulo: '',
+    descripcion: '',
+    descuento: null,
+    precioEspecial: null,
+    validoHasta: ''
+  };
+  editandoPromocion: any = null;
+  
+  // Paquetes (dinámicos)
+  paquetes: any[] = [];
+  mostrarFormularioPaquete: boolean = false;
+  nuevoPaquete: any = {
+    clave: '',
+    nombre: '',
+    precio: null,
+    descripcion: ''
+  };
+  editandoPaquete: any = null;
+  
   nuevoNumeroContrato: string = '';
   reportesParaAsignar: any[] = [];
   reporteSeleccionado: any = null;
@@ -103,13 +128,6 @@ export class AdminDashboard implements OnInit {
   anioSeleccionado: number = 0;
   nuevoPago: any = { mes: 1, anio: new Date().getFullYear(), monto: 0 };
 
-  // Lista de paquetes disponibles
-  paquetes: any[] = [
-    { clave: 'basico', nombre: 'Básico', precio: 200 },
-    { clave: 'estandar', nombre: 'Estándar', precio: 299 },
-    { clave: 'premium', nombre: 'Premium', precio: 449 }
-  ];
-
   // Meses del año
   meses: string[] = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
@@ -119,12 +137,15 @@ export class AdminDashboard implements OnInit {
     private technicianService: TechnicianService,
     private reportService: ReportService,
     private preregistroService: PreregistroService,
+    private configService: ConfigService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     this.loadData();
     this.loadReportes();
+    this.loadPromociones();
+    this.loadPaquetes();
   }
 
   loadReportes() {
@@ -347,7 +368,8 @@ export class AdminDashboard implements OnInit {
   }
 
   generarRecibo(pago: any) {
-    window.open(`http://localhost:5000/api/receipts/${pago.userId}/${pago.paymentId}`, '_blank');
+    // URL for PDF receipt download - uses relative path for SSR compatibility
+    window.open(`/api/receipts/${pago.userId}/${pago.paymentId}`, '_blank');
   }
 
   // ==================== EDITAR CLIENTE ====================
@@ -372,7 +394,7 @@ export class AdminDashboard implements OnInit {
     this.clienteEditando = null;
   }
 
-  guardarCambiosCliente() {
+  guardarCambiosClienteModal() {
     if (!this.clienteEditando) return;
 
     this.userService.updateClientData(this.clienteEditando._id, {
@@ -427,7 +449,7 @@ export class AdminDashboard implements OnInit {
     this.aniosConHistorial = [];
     this.anioSeleccionado = 0;
     
-    // Generar años desde instalación
+    // Generar años desde instalación - SIEMPRE mostrar años aunque no haya pagos
     if (user.fechaInstalacion) {
       const fechaInst = new Date(user.fechaInstalacion);
       const anioInicio = fechaInst.getFullYear();
@@ -436,13 +458,22 @@ export class AdminDashboard implements OnInit {
         this.aniosConHistorial.push(a);
       }
     } else {
-      // Si no hay fecha de instalación, usar año actual
-      this.aniosConHistorial.push(new Date().getFullYear());
+      // Si no hay fecha de instalación, mostrar últimos 5 años
+      const anioActual = new Date().getFullYear();
+      for (let a = anioActual - 4; a <= anioActual; a++) {
+        this.aniosConHistorial.push(a);
+      }
     }
     
-    // Cargar historial de pagosdel cliente
+    // Mostrar modal inmediatamente
+    this.mostrarModalHistorial = true;
+    
+    // Cargar historial de pagos del cliente
     this.userService.getUserById(user._id).subscribe({
       next: (cliente) => {
+        // Actualizar cliente con datos frescos
+        this.clienteHistorial = cliente;
+        
         if (cliente.historialPagos && cliente.historialPagos.length > 0) {
           // Agrupar pagos por año
           const grupos: { [key: number]: any[] } = {};
@@ -459,14 +490,26 @@ export class AdminDashboard implements OnInit {
             meses: grupos[Number(anio)].sort((a, b) => a.mes - b.mes)
           }));
         } else {
-          this.historialPagosCliente = [];
+          // Generar estructura de meses vacíos para cada año
+          this.historialPagosCliente = this.aniosConHistorial.sort((a, b) => b - a).map(anio => ({
+            ano: anio,
+            meses: Array.from({length: 12}, (_, i) => ({
+              mes: i + 1,
+              monto: cliente.precioPaquete || 200,
+              status: 'pendiente',
+              fechaPago: null
+            }))
+          }));
         }
         this.cdr.markForCheck();
       },
-      error: (err) => console.error('Error al cargar historial:', err)
+      error: (err) => {
+        console.error('Error al cargar historial:', err);
+        // Still show the modal with empty data
+        this.historialPagosCliente = [];
+        this.cdr.markForCheck();
+      }
     });
-    
-    this.mostrarModalHistorial = true;
   }
 
   cerrarModalDetalles() {
@@ -597,17 +640,20 @@ export class AdminDashboard implements OnInit {
     this.cargarHistorialPagos();
   }
 
-  registrarPago(mes: number, año: number) {
-    const monto = prompt('Ingrese el monto del pago:', String(this.clienteHistorial?.precioPaquete || 200));
-    if (!monto || isNaN(Number(monto)) || Number(monto) <= 0) {
-      alert('Monto inválido');
-      return;
+  registrarPago(mes: number, año: number, monto?: number) {
+    if (!monto) {
+      monto = prompt('Ingrese el monto del pago:', String(this.clienteHistorial?.precioPaquete || 200)) as any;
+      if (!monto || isNaN(Number(monto)) || Number(monto) <= 0) {
+        alert('Monto invalido');
+        return;
+      }
+      monto = Number(monto);
     }
 
     this.userService.registerPayment(this.clienteHistorial._id, {
       mes: mes,
       año: año,
-      monto: Number(monto)
+      monto: monto
     }).subscribe({
       next: () => {
         alert('Pago registrado correctamente');
@@ -616,6 +662,52 @@ export class AdminDashboard implements OnInit {
       },
       error: (err) => {
         alert('Error al registrar pago: ' + (err.error?.error || err.message));
+      }
+    });
+  }
+
+  cambiarEstatusPago(pago: any) {
+    // Actualizar el estado del pago en el historial
+    if (pago.status === 'pagado' && !pago.fechaPago) {
+      // Si se marca como pagado, registrar el pago
+      this.registrarPago(pago.mes, pago.ano || pago.año, pago.monto);
+    } else if (pago.status !== 'pagado' && pago.fechaPago) {
+      // Si se cambia a pendiente o atrasado, eliminar el pago
+      const index = this.clienteHistorial.historialPagos?.findIndex((p: any) => 
+        p.mes === pago.mes && (p.ano === pago.ano || p.año === pago.año)
+      );
+      if (index !== undefined && index >= 0) {
+        this.eliminarPago(pago, index);
+      }
+    }
+  }
+
+  guardarCambiosCliente() {
+    if (!this.clienteDetalles) return;
+
+    this.userService.updateClientData(this.clienteDetalles._id, {
+      nombre: this.clienteDetalles.nombre,
+      telefono: this.clienteDetalles.telefono || '',
+      direccion: this.clienteDetalles.direccion || '',
+      localidad: this.clienteDetalles.localidad,
+      estatus: this.clienteDetalles.estatus,
+      paquete: this.clienteDetalles.paquete,
+      precioPaquete: this.clienteDetalles.precioPaquete,
+      deuda: this.clienteDetalles.deuda,
+      fechaInstalacion: this.clienteDetalles.fechaInstalacion || null
+    }).subscribe({
+      next: (userActualizado) => {
+        // Actualizar en la lista local
+        const index = this.rawData.findIndex(u => u._id === this.clienteDetalles._id);
+        if (index >= 0) {
+          this.rawData[index] = { ...this.rawData[index], ...userActualizado };
+        }
+        alert('Cambios guardados correctamente');
+        this.recargarDatos();
+        this.cerrarModalDetalles();
+      },
+      error: (err) => {
+        alert('Error al guardar cambios: ' + (err.error?.error || err.message));
       }
     });
   }
@@ -955,6 +1047,175 @@ export class AdminDashboard implements OnInit {
         this.cdr.markForCheck();
       },
       error: (err) => console.error('Error al cargar pre-registros:', err)
+    });
+  }
+
+  // ==================== PROMOCIONES ====================
+  
+  loadPromociones() {
+    this.configService.getConfig().subscribe({
+      next: (config) => {
+        this.promociones = config.promociones || [];
+        this.cdr.markForCheck();
+      },
+      error: (err) => console.error('Error al cargar promociones:', err)
+    });
+  }
+
+  crearPromocion() {
+    if (!this.nuevaPromocion.titulo) {
+      alert('Por favor ingresa un titulo para la promocion');
+      return;
+    }
+    
+    const promoData = {
+      titulo: this.nuevaPromocion.titulo,
+      descripcion: this.nuevaPromocion.descripcion,
+      descuento: this.nuevaPromocion.descuento,
+      precioEspecial: this.nuevaPromocion.precioEspecial,
+      validoHasta: this.nuevaPromocion.validoHasta || null
+    };
+    
+    this.configService.addPromocion(promoData).subscribe({
+      next: (res) => {
+        alert('Promocion creada exitosamente');
+        this.mostrarFormularioPromocion = false;
+        this.nuevaPromocion = { titulo: '', descripcion: '', descuento: null, precioEspecial: null, validoHasta: '' };
+        this.loadPromociones();
+      },
+      error: (err) => alert('Error al crear promocion: ' + (err.error?.error || err.message))
+    });
+  }
+
+  editarPromocion(promo: any) {
+    const nuevoTitulo = prompt('Editar titulo:', promo.titulo);
+    if (nuevoTitulo === null) return;
+    
+    const nuevaDescripcion = prompt('Editar descripcion:', promo.descripcion);
+    if (nuevaDescripcion === null) return;
+    
+    const nuevoDescuento = prompt('Editar descuento (%):', promo.descuento?.toString() || '');
+    
+    const nuevoPrecio = prompt('Editar precio especial:', promo.precioEspecial?.toString() || '');
+    
+    this.configService.updatePromocion(promo._id, {
+      titulo: nuevoTitulo,
+      descripcion: nuevaDescripcion,
+      descuento: nuevoDescuento ? Number(nuevoDescuento) : null,
+      precioEspecial: nuevoPrecio ? Number(nuevoPrecio) : null
+    }).subscribe({
+      next: () => {
+        alert('Promocion actualizada');
+        this.loadPromociones();
+      },
+      error: (err) => alert('Error al actualizar: ' + (err.error?.error || err.message))
+    });
+  }
+
+  togglePromocion(promo: any) {
+    this.configService.updatePromocion(promo._id, { activo: !promo.activo }).subscribe({
+      next: () => {
+        alert(promo.activo ? 'Promocion desactivada' : 'Promocion activada');
+        this.loadPromociones();
+      },
+      error: (err) => alert('Error al cambiar estado: ' + (err.error?.error || err.message))
+    });
+  }
+
+  eliminarPromocion(promo: any) {
+    if (!confirm(`¿Eliminar la promocion "${promo.titulo}"?`)) return;
+    
+    this.configService.deletePromocion(promo._id).subscribe({
+      next: () => {
+        alert('Promocion eliminada');
+        this.loadPromociones();
+      },
+      error: (err) => alert('Error al eliminar: ' + (err.error?.error || err.message))
+    });
+  }
+
+  // Métodos para paquetes
+  loadPaquetes() {
+    this.configService.getConfig().subscribe({
+      next: (config) => {
+        this.paquetes = config.paquetes || [
+          { clave: 'basico', nombre: 'Básico', precio: 200 },
+          { clave: 'estandar', nombre: 'Estándar', precio: 299 },
+          { clave: 'premium', nombre: 'Premium', precio: 449 }
+        ];
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.paquetes = [
+          { clave: 'basico', nombre: 'Básico', precio: 200 },
+          { clave: 'estandar', nombre: 'Estándar', precio: 299 },
+          { clave: 'premium', nombre: 'Premium', precio: 449 }
+        ];
+      }
+    });
+  }
+
+  editarPaquete(pkg: any) {
+    this.nuevoPaquete = { ...pkg };
+    this.editandoPaquete = pkg;
+    this.mostrarFormularioPaquete = true;
+  }
+
+  cancelarPaquete() {
+    this.nuevoPaquete = { clave: '', nombre: '', precio: null, descripcion: '' };
+    this.editandoPaquete = null;
+    this.mostrarFormularioPaquete = false;
+  }
+
+  guardarPaquete() {
+    if (!this.nuevoPaquete.clave || !this.nuevoPaquete.nombre || !this.nuevoPaquete.precio) {
+      alert('Por favor completa todos los campos');
+      return;
+    }
+
+    this.configService.getConfig().subscribe({
+      next: (config) => {
+        let paquetes = config.paquetes || [];
+        
+        if (this.editandoPaquete) {
+          // Editar paquete existente
+          paquetes = paquetes.map((p: any) => 
+            p.clave === this.editandoPaquete.clave ? this.nuevoPaquete : p
+          );
+        } else {
+          // Agregar nuevo paquete
+          paquetes.push(this.nuevoPaquete);
+        }
+
+        this.configService.updateConfig({ paquetes }).subscribe({
+          next: () => {
+            alert(this.editandoPaquete ? 'Paquete actualizado' : 'Paquete creado');
+            this.cancelarPaquete();
+            this.loadPaquetes();
+          },
+          error: (err) => alert('Error al guardar: ' + (err.error?.error || err.message))
+        });
+      },
+      error: (err) => alert('Error al cargar config: ' + (err.error?.error || err.message))
+    });
+  }
+
+  eliminarPaquete(pkg: any) {
+    if (!confirm(`¿Eliminar el paquete ${pkg.nombre}?`)) return;
+
+    this.configService.getConfig().subscribe({
+      next: (config) => {
+        const paquetes = (config.paquetes || []).filter((p: any) => p.clave !== pkg.clave);
+
+        this.configService.updateConfig({ paquetes }).subscribe({
+          next: () => {
+            alert('Paquete eliminado');
+            this.loadPaquetes();
+          },
+          error: (err) => alert('Error al eliminar: ' + (err.error?.error || err.message))
+        });
+      },
+      error: (err) => alert('Error al cargar config: ' + (err.error?.error || err.message))
     });
   }
 

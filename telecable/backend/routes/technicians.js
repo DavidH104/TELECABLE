@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Technician = require('../models/technician');
 const User = require('../models/user');
+const Report = require('../models/report');
 const bcrypt = require('bcryptjs');
 
 // Login de técnico
@@ -161,14 +162,35 @@ router.delete('/:id', async (req, res) => {
 // Obtener todos los reportes pendientes
 router.get('/reportes/todos', async (req, res) => {
   try {
-    const reportes = await User.find(
+    let todosReportes = [];
+    
+    // Primero obtener reportes de la coleccion Report
+    const reportesColeccion = await Report.find().sort({ fecha: -1 });
+    if (reportesColeccion.length > 0) {
+      reportesColeccion.forEach(reporte => {
+        todosReportes.push({
+          _id: reporte._id,
+          tipo: reporte.tipo,
+          mensaje: reporte.mensaje,
+          fecha: reporte.fecha,
+          estatus: reporte.estatus,
+          prioridad: reporte.prioridad,
+          tecnicoAsignado: reporte.tecnicoAsignado,
+          tecnicoNombre: reporte.tecnicoNombre,
+          clienteId: reporte.usuarioId,
+          clienteNumero: reporte.numeroContrato,
+          clienteNombre: reporte.nombreCliente
+        });
+      });
+    }
+    
+    // Luego obtener reportes embebidos en User
+    const reportesUser = await User.find(
       { 'reportes.0': { $exists: true } },
       { numero: 1, nombre: 1, localidad: 1, reportes: 1 }
     ).sort({ 'reportes.fecha': -1 });
     
-    // Transformar para obtener todos los reportes en un solo array
-    let todosReportes = [];
-    reportes.forEach(cliente => {
+    reportesUser.forEach(cliente => {
       cliente.reportes.forEach(reporte => {
         todosReportes.push({
           ...reporte.toObject(),
@@ -194,12 +216,33 @@ router.get('/reportes/asignados/:tecnicoId', async (req, res) => {
   try {
     const { tecnicoId } = req.params;
     
+    let misReportes = [];
+    
+    // Buscar en la coleccion Report
+    const reportesColeccion = await Report.find({ tecnicoAsignado: tecnicoId });
+    reportesColeccion.forEach(reporte => {
+      misReportes.push({
+        _id: reporte._id,
+        tipo: reporte.tipo,
+        mensaje: reporte.mensaje,
+        fecha: reporte.fecha,
+        estatus: reporte.estatus,
+        prioridad: reporte.prioridad,
+        tecnicoAsignado: reporte.tecnicoAsignado,
+        tecnicoNombre: reporte.tecnicoNombre,
+        notasTecnico: reporte.notasTecnico,
+        clienteId: reporte.usuarioId,
+        clienteNumero: reporte.numeroContrato,
+        clienteNombre: reporte.nombreCliente
+      });
+    });
+    
+    // Buscar en User.reportes
     const reportes = await User.find(
       { 'reportes.tecnicoAsignado': tecnicoId },
       { numero: 1, nombre: 1, localidad: 1, reportes: 1 }
     );
     
-    let misReportes = [];
     reportes.forEach(cliente => {
       cliente.reportes.forEach(reporte => {
         if (reporte.tecnicoAsignado && reporte.tecnicoAsignado.toString() === tecnicoId) {
@@ -214,6 +257,9 @@ router.get('/reportes/asignados/:tecnicoId', async (req, res) => {
       });
     });
     
+    // Ordenar por fecha
+    misReportes.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    
     res.json(misReportes);
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al obtener reportes', error: error.message });
@@ -226,6 +272,24 @@ router.put('/reportes/:clienteId/:reporteId', async (req, res) => {
     const { clienteId, reporteId } = req.params;
     const { estatus, prioridad, notasTecnico, tecnicoAsignado, tecnicoNombre } = req.body;
     
+    // Primero intentar actualizar en la coleccion Report
+    let reporteEnColeccion = await Report.findById(reporteId);
+    if (reporteEnColeccion) {
+      if (estatus) reporteEnColeccion.estatus = estatus;
+      if (prioridad) reporteEnColeccion.prioridad = prioridad;
+      if (notasTecnico) reporteEnColeccion.notasTecnico = notasTecnico;
+      if (tecnicoAsignado) {
+        reporteEnColeccion.tecnicoAsignado = tecnicoAsignado;
+        reporteEnColeccion.tecnicoNombre = tecnicoNombre;
+      }
+      if (estatus === 'Completado') {
+        reporteEnColeccion.fechaCompletado = new Date();
+      }
+      await reporteEnColeccion.save();
+      return res.json({ mensaje: 'Reporte actualizado', reporte: reporteEnColeccion });
+    }
+    
+    // Luego intentar en User.reportes
     const update = {};
     if (estatus) update['reportes.$.estatus'] = estatus;
     if (prioridad) update['reportes.$.prioridad'] = prioridad;

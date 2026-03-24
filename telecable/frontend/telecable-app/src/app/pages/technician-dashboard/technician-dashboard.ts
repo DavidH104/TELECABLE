@@ -51,30 +51,26 @@ export class TechnicianDashboardComponent implements OnInit {
   cargarReportes(): void {
     this.loading = true;
     
-    // Cargar reportes asignados
-    this.technicianService.getAssignedReports(this.technician.id).subscribe({
-      next: (data) => {
-        this.misReportes = data;
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.misReportes = [];
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
-
-    // Cargar todos los reportes
+    // Cargar todos los reportes - mostrar todos los reportes disponibles
     this.technicianService.getAllReports().subscribe({
       next: (data) => {
         this.todosReportes = data;
         this.reportesFiltrados = data;
+        // En "Mis Trabajos" mostrar todos los reportes pendientes que necesitan atención
+        this.misReportes = data.filter((r: any) => 
+          r.estatus === 'Pendiente' || 
+          r.estatus === 'En Revision' || 
+          r.estatus === 'Asignado' || 
+          r.estatus === 'En Proceso'
+        );
+        this.loading = false;
         this.cdr.detectChanges();
       },
       error: () => {
         this.todosReportes = [];
         this.reportesFiltrados = [];
+        this.misReportes = [];
+        this.loading = false;
         this.cdr.detectChanges();
       }
     });

@@ -11,11 +11,11 @@ router.get('/:userId/:paymentIndex', async (req, res) => {
     }
 
     const paymentIndex = parseInt(req.params.paymentIndex);
-    if (isNaN(paymentIndex) || paymentIndex < 0 || paymentIndex >= user.recibos.length) {
+    if (isNaN(paymentIndex) || paymentIndex < 0 || paymentIndex >= user.historialPagos.length) {
       return res.status(404).send('Pago no encontrado');
     }
 
-    const payment = user.recibos[paymentIndex];
+    const payment = user.historialPagos[paymentIndex];
     
     const stream = res.writeHead(200, {
       'Content-Type': 'application/pdf',

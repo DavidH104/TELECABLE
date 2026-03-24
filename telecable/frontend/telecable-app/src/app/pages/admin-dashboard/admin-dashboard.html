@@ -40,6 +40,16 @@
         <span class="badge bg-warning text-dark" *ngIf="preregistrosPendientes > 0">{{preregistrosPendientes}}</span>
       </button>
     </div>
+    <div class="col-md-2">
+      <button class="btn w-100" [class.btn-primary]="vistaActual === 'promociones'" [class.btn-outline-primary]="vistaActual !== 'promociones'" (click)="vistaActual = 'promociones'; loadPromociones()">
+        🎁 Promociones
+      </button>
+    </div>
+    <div class="col-md-2">
+      <button class="btn w-100" [class.btn-success]="vistaActual === 'paquetes'" [class.btn-outline-success]="vistaActual !== 'paquetes'" (click)="vistaActual = 'paquetes'; loadPaquetes()">
+        📦 Paquetes
+      </button>
+    </div>
   </div>
 
   <!-- VISTA: CLIENTES (TABLA) -->
@@ -180,7 +190,6 @@
             <tr>
               <th>Contrato</th>
               <th>Nombre</th>
-              <th>Detalles</th>
               <th>Pagos</th>
             </tr>
           </thead>
@@ -191,18 +200,13 @@
                 <a href="javascript:void(0)" (click)="abrirModalDetalles(u)" class="text-primary text-decoration-none fw-bold">{{u.nombre}}</a>
               </td>
               <td>
-                <button class="btn btn-sm btn-primary" (click)="abrirModalDetalles(u)" title="Ver Datos del Cliente">
-                  <i class="bi bi-person-circle"></i> Datos
-                </button>
-              </td>
-              <td>
                 <button class="btn btn-sm btn-info" (click)="abrirModalHistorialPagos(u)" title="Ver Historial de Pagos">
                   <i class="bi bi-calendar-check"></i> Pagos
                 </button>
               </td>
             </tr>
             <tr *ngIf="usersFiltrados.length === 0">
-              <td colspan="4" class="text-center">No se encontraron resultados.</td>
+              <td colspan="3" class="text-center">No se encontraron resultados.</td>
             </tr>
           </tbody>
         </table>
@@ -529,7 +533,178 @@
     </div>
   </div>
 
-  <div *ngIf="vistaActual === 'buscar'">
+  <!-- VISTA: PROMOCIONES -->
+  <div *ngIf="vistaActual === 'promociones'">
+    <div class="card">
+      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h4 class="mb-0"><i class="bi bi-gift me-2"></i>Gestion de Promociones</h4>
+        <button class="btn btn-success btn-sm" (click)="mostrarFormularioPromocion = true">
+          <i class="bi bi-plus-circle me-1"></i> Nueva Promocion
+        </button>
+      </div>
+      <div class="card-body">
+        <!-- Formulario nueva promocion -->
+        <div class="card bg-light p-3 mb-4" *ngIf="mostrarFormularioPromocion">
+          <h5>Nueva Promocion</h5>
+          <div class="row">
+            <div class="col-md-3 mb-2">
+              <input type="text" class="form-control" placeholder="Titulo" [(ngModel)]="nuevaPromocion.titulo">
+            </div>
+            <div class="col-md-3 mb-2">
+              <input type="text" class="form-control" placeholder="Descripcion" [(ngModel)]="nuevaPromocion.descripcion">
+            </div>
+            <div class="col-md-2 mb-2">
+              <input type="number" class="form-control" placeholder="Descuento %" [(ngModel)]="nuevaPromocion.descuento">
+            </div>
+            <div class="col-md-2 mb-2">
+              <input type="number" class="form-control" placeholder="Precio especial" [(ngModel)]="nuevaPromocion.precioEspecial">
+            </div>
+            <div class="col-md-2 mb-2">
+              <input type="date" class="form-control" [(ngModel)]="nuevaPromocion.validoHasta">
+            </div>
+          </div>
+          <div class="mt-2">
+            <button class="btn btn-success me-2" (click)="crearPromocion()">Guardar</button>
+            <button class="btn btn-secondary" (click)="mostrarFormularioPromocion = false">Cancelar</button>
+          </div>
+        </div>
+
+        <!-- Lista de promociones -->
+        <div *ngIf="promociones.length === 0" class="text-center py-5">
+          <h5 class="text-muted">No hay promociones configuradas</h5>
+          <p class="text-muted">Crea una promocion para que aparezca en la pagina de inicio</p>
+        </div>
+        <div class="table-responsive" *ngIf="promociones.length > 0">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Titulo</th>
+                <th>Descripcion</th>
+                <th>Descuento</th>
+                <th>Precio Especial</th>
+                <th>Valido Hasta</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let promo of promociones">
+                <td><strong>{{promo.titulo}}</strong></td>
+                <td>{{promo.descripcion}}</td>
+                <td><span class="badge bg-success" *ngIf="promo.descuento">{{promo.descuento}}%</span></td>
+                <td>${{promo.precioEspecial || '-'}}</td>
+                <td>{{promo.validoHasta | date:'dd/MM/yyyy'}}</td>
+                <td>
+                  <span class="badge" [class.bg-success]="promo.activo" [class.bg-secondary]="!promo.activo">
+                    {{promo.activo ? 'Activa' : 'Inactiva'}}
+                  </span>
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-primary" (click)="editarPromocion(promo)" title="Editar">
+                      Editar
+                    </button>
+                    <button class="btn btn-success" *ngIf="!promo.activo" (click)="togglePromocion(promo)" title="Activar">
+                      Activar
+                    </button>
+                    <button class="btn btn-warning" *ngIf="promo.activo" (click)="togglePromocion(promo)" title="Desactivar">
+                      Desactivar
+                    </button>
+                    <button class="btn btn-danger" (click)="eliminarPromocion(promo)" title="Eliminar">
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA: PAQUETES -->
+  <div *ngIf="vistaActual === 'paquetes'">
+    <div class="card">
+      <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        <h4 class="mb-0"><i class="bi bi-box-seam me-2"></i>Gestión de Paquetes</h4>
+        <button class="btn btn-light btn-sm" (click)="mostrarFormularioPaquete = true">
+          <i class="bi bi-plus-circle me-1"></i> Nuevo Paquete
+        </button>
+      </div>
+      <div class="card-body">
+        <!-- Formulario nuevo/editar paquete -->
+        <div class="card bg-light p-3 mb-4" *ngIf="mostrarFormularioPaquete">
+          <h5>{{editandoPaquete ? 'Editar Paquete' : 'Nuevo Paquete'}}</h5>
+          <div class="row">
+            <div class="col-md-3 mb-2">
+              <label class="form-label">Clave</label>
+              <input type="text" class="form-control" [(ngModel)]="nuevoPaquete.clave" placeholder="ej: basico">
+            </div>
+            <div class="col-md-4 mb-2">
+              <label class="form-label">Nombre</label>
+              <input type="text" class="form-control" [(ngModel)]="nuevoPaquete.nombre" placeholder="ej: Paquete Básico">
+            </div>
+            <div class="col-md-2 mb-2">
+              <label class="form-label">Precio</label>
+              <input type="number" class="form-control" [(ngModel)]="nuevoPaquete.precio" placeholder="0">
+            </div>
+            <div class="col-md-3 mb-2">
+              <label class="form-label">Descripción</label>
+              <input type="text" class="form-control" [(ngModel)]="nuevoPaquete.descripcion" placeholder="Descripción del paquete">
+            </div>
+          </div>
+          <div class="mt-2">
+            <button class="btn btn-success me-2" (click)="guardarPaquete()">
+              <i class="bi bi-check-circle me-1"></i>Guardar
+            </button>
+            <button class="btn btn-secondary" (click)="cancelarPaquete()">
+              <i class="bi bi-x-circle me-1"></i>Cancelar
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista de paquetes -->
+        <div *ngIf="paquetes.length === 0" class="text-center py-5">
+          <h5 class="text-muted">No hay paquetes configurados</h5>
+          <p class="text-muted">Crea un paquete para ofrecer a tus clientes</p>
+        </div>
+        <div class="table-responsive" *ngIf="paquetes.length > 0">
+          <table class="table table-hover">
+            <thead class="table-success">
+              <tr>
+                <th>Clave</th>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let pkg of paquetes">
+                <td><strong>{{pkg.clave}}</strong></td>
+                <td>{{pkg.nombre}}</td>
+                <td>${{pkg.precio}}</td>
+                <td>{{pkg.descripcion || 'Sin descripción'}}</td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-primary" (click)="editarPaquete(pkg)" title="Editar">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-danger" (click)="eliminarPaquete(pkg)" title="Eliminar">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="vistaActual === 'busar'">
     <div class="card p-4">
       <h3 class="mb-4">Buscar Cliente</h3>
       <div class="input-group mb-3">
@@ -650,7 +825,7 @@
         <div class="row">
           <div class="col-md-6 mb-3">
             <label class="form-label">Nombre Completo</label>
-            <input type="text" class="form-control" [(ngModel)]="clienteEditandoDatos.nombre">
+            <input type="text" class="form-control" [value]="clienteEditandoDatos.nombre" disabled>
           </div>
           <div class="col-md-6 mb-3">
             <label class="form-label">Teléfono</label>
@@ -688,7 +863,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="cerrarModalEditarCliente()">Cancelar</button>
-        <button type="button" class="btn btn-primary" (click)="guardarCambiosCliente()">Guardar Cambios</button>
+        <button type="button" class="btn btn-primary" (click)="guardarCambiosClienteModal()">Guardar Cambios</button>
       </div>
     </div>
   </div>
@@ -719,16 +894,16 @@
         </div>
         <div class="row mb-3">
           <div class="col-md-4">
-            <label class="form-label">Filtrar por Anio:</label>
+            <label class="form-label">Filtrar por Año:</label>
             <select class="form-select" [(ngModel)]="anioSeleccionado" (change)="filtrarPorAnio()">
-              <option [value]="0">Todos los anios</option>
+              <option [value]="0">Todos los años</option>
               <option *ngFor="let a of aniosConHistorial" [value]="a">{{a}}</option>
             </select>
           </div>
         </div>
         <div *ngIf="anioSeleccionado === 0">
           <div *ngFor="let grupo of historialPagosCliente" class="mb-4">
-            <h5 class="text-primary">📆 Anio {{grupo.anio}}</h5>
+            <h5 class="text-primary">📆 Año {{grupo.ano}}</h5>
             <table class="table table-bordered table-striped">
               <thead class="table-dark">
                 <tr><th>Mes</th><th>Monto</th><th>Fecha</th><th>Estatus</th><th>Acciones</th></tr>
@@ -736,14 +911,20 @@
               <tbody>
                 <tr *ngFor="let p of grupo.meses; let i = index">
                   <td>{{meses[p.mes - 1]}}</td>
-                  <td>${{p.monto}}</td>
+                  <td>
+                    <input type="number" class="form-control form-control-sm" [(ngModel)]="p.monto" style="width: 80px;">
+                  </td>
                   <td>{{p.fechaPago | date:'dd/MM/yyyy'}}</td>
                   <td>
-                    <span class="badge" [class.bg-success]="p.status === 'pagado'" [class.bg-warning]="p.status === 'pendiente'" [class.bg-danger]="p.status === 'atrasado'">{{p.status}}</span>
+                    <select class="form-select form-select-sm" [(ngModel)]="p.status" (change)="cambiarEstatusPago(p)">
+                      <option value="pagado">Pagado</option>
+                      <option value="pendiente">Pendiente</option>
+                      <option value="atrasado">Atrasado</option>
+                    </select>
                   </td>
                   <td>
-                    <button *ngIf="p.status !== 'pagado'" class="btn btn-sm btn-success" (click)="registrarPago(p.mes, p.anio)">Pagar</button>
                     <button *ngIf="p.status === 'pagado'" class="btn btn-sm btn-danger" (click)="eliminarPago(p, i)">Eliminar</button>
+                    <button *ngIf="p.status !== 'pagado'" class="btn btn-sm btn-success" (click)="registrarPago(p.mes, p.ano || p['año'], p.monto)">Marcar Pagado</button>
                   </td>
                 </tr>
               </tbody>
@@ -758,14 +939,20 @@
             <tbody>
               <tr *ngFor="let p of historialPagosCliente; let i = index">
                 <td>{{meses[p.mes - 1]}}</td>
-                <td>${{p.monto}}</td>
+                <td>
+                  <input type="number" class="form-control form-control-sm" [(ngModel)]="p.monto" style="width: 80px;">
+                </td>
                 <td>{{p.fechaPago | date:'dd/MM/yyyy'}}</td>
                 <td>
-                  <span class="badge" [class.bg-success]="p.status === 'pagado'" [class.bg-warning]="p.status === 'pendiente'" [class.bg-danger]="p.status === 'atrasado'">{{p.status}}</span>
+                  <select class="form-select form-select-sm" [(ngModel)]="p.status" (change)="cambiarEstatusPago(p)">
+                    <option value="pagado">Pagado</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="atrasado">Atrasado</option>
+                  </select>
                 </td>
                 <td>
-                  <button *ngIf="p.status !== 'pagado'" class="btn btn-sm btn-success" (click)="registrarPago(p.mes, p.anio)">Pagar</button>
                   <button *ngIf="p.status === 'pagado'" class="btn btn-sm btn-danger" (click)="eliminarPago(p, i)">Eliminar</button>
+                  <button *ngIf="p.status !== 'pagado'" class="btn btn-sm btn-success" (click)="registrarPago(p.mes, p.ano || p['año'], p.monto)">Marcar Pagado</button>
                 </td>
               </tr>
             </tbody>
@@ -782,16 +969,16 @@
   </div>
 </div>
 
-<!-- MODAL: DETALLES DEL CLIENTE -->
+<!-- MODAL: DETALLES DEL CLIENTE (Editable) -->
 <div class="modal fade" id="modalDetalles" tabindex="-1" [class.show]="mostrarModalDetalles" [style.display]="mostrarModalDetalles ? 'block' : 'none'">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title">📋 Detalles del Cliente - {{clienteDetalles?.nombre}}</h5>
+        <h5 class="modal-title">📋 Editar Cliente - {{clienteDetalles?.nombre}}</h5>
         <button type="button" class="btn-close btn-close-white" (click)="cerrarModalDetalles()"></button>
       </div>
       <div class="modal-body" *ngIf="clienteDetalles">
-        <!-- Informacion del Cliente -->
+        <!-- Informacion del Cliente (Editable) -->
         <div class="card mb-4">
           <div class="card-header bg-light">
             <h5 class="mb-0">📄 Informacion del Cliente</h5>
@@ -799,69 +986,55 @@
           <div class="card-body">
             <div class="row">
               <div class="col-md-3 mb-2">
-                <strong>Contrato:</strong> {{clienteDetalles.numero}}
+                <label class="form-label"><strong>Contrato:</strong></label>
+                <input type="text" class="form-control" [value]="clienteDetalles.numero" disabled>
               </div>
               <div class="col-md-3 mb-2">
-                <strong>Nombre:</strong> {{clienteDetalles.nombre}}
+                <label class="form-label"><strong>Nombre:</strong></label>
+                <input type="text" class="form-control" [value]="clienteDetalles.nombre" disabled>
               </div>
               <div class="col-md-3 mb-2">
-                <strong>Estatus:</strong> 
-                <span class="badge" [class.bg-success]="clienteDetalles.estatus === 'Activo'" [class.bg-warning]="clienteDetalles.estatus === 'Suspendido'" [class.bg-danger]="clienteDetalles.estatus === 'Cancelado'">{{clienteDetalles.estatus}}</span>
+                <label class="form-label"><strong>Estatus:</strong></label>
+                <select class="form-select" [(ngModel)]="clienteDetalles.estatus">
+                  <option value="Activo">Activo</option>
+                  <option value="Suspendido">Suspendido</option>
+                  <option value="Cancelado">Cancelado</option>
+                </select>
               </div>
               <div class="col-md-3 mb-2">
-                <strong>Fecha de Instalacion:</strong> {{clienteDetalles.fechaInstalacion | date:'dd/MM/yyyy'}}
+                <label class="form-label"><strong>Fecha de Instalacion:</strong></label>
+                <input type="date" class="form-control" [(ngModel)]="clienteDetalles.fechaInstalacion">
               </div>
             </div>
             <div class="row">
               <div class="col-md-3 mb-2">
-                <strong>Paquete:</strong> {{clienteDetalles.paquete || 'basico'}}
+                <label class="form-label"><strong>Paquete:</strong></label>
+                <select class="form-select" [(ngModel)]="clienteDetalles.paquete">
+                  <option value="basico">Basico</option>
+                  <option value="estandar">Estandar</option>
+                  <option value="premium">Premium</option>
+                </select>
               </div>
               <div class="col-md-3 mb-2">
-                <strong>Precio Mensual:</strong> ${{clienteDetalles.precioPaquete || 200}}
+                <label class="form-label"><strong>Precio Mensual:</strong></label>
+                <input type="number" class="form-control" [(ngModel)]="clienteDetalles.precioPaquete">
               </div>
               <div class="col-md-3 mb-2">
-                <strong>Deuda Total:</strong> <span class="text-danger">${{clienteDetalles.deuda || 0}}</span>
+                <label class="form-label"><strong>Deuda Total:</strong></label>
+                <input type="number" class="form-control" [(ngModel)]="clienteDetalles.deuda">
               </div>
               <div class="col-md-3 mb-2">
-                <strong>Localidad:</strong> {{clienteDetalles.localidad}}
+                <label class="form-label"><strong>Localidad:</strong></label>
+                <input type="text" class="form-control" [(ngModel)]="clienteDetalles.localidad">
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Historial de Pagos -->
-        <div class="card">
-          <div class="card-header bg-success text-white">
-            <h5 class="mb-0">📅 Historial de Pagos</h5>
-          </div>
-          <div class="card-body">
-            <table class="table table-bordered table-striped table-hover">
-              <thead class="table-dark">
-                <tr>
-                  <th>Mes</th>
-                  <th>Año</th>
-                  <th>Monto</th>
-                  <th>Estatus</th>
-                  <th>Fecha de Pago</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let mes of mesesGenerados">
-                  <td>{{mes.nombreMes}}</td>
-                  <td>{{mes.ano}}</td>
-                  <td>${{mes.monto}}</td>
-                  <td>
-                    <span class="badge" [class.bg-success]="mes.estatus === 'pagado'" [class.bg-warning]="mes.estatus === 'pendiente'" [class.bg-danger]="mes.estatus === 'atrasado'">{{mes.estatus}}</span>
-                  </td>
-                  <td>{{mes.fechaPago ? (mes.fechaPago | date:'dd/MM/yyyy') : '-'}}</td>
-                  <td>
-                    <button *ngIf="mes.estatus !== 'pagado'" class="btn btn-sm btn-success" (click)="registrarPagoMes(mes)">Pagar</button>
-                    <button *ngIf="mes.estatus === 'pagado'" class="btn btn-sm btn-danger" (click)="eliminarPagoMes(mes)">Eliminar</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="row mt-3">
+              <div class="col-12">
+                <button class="btn btn-success" (click)="guardarCambiosCliente()">
+                  <i class="bi bi-save"></i> Guardar Cambios
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

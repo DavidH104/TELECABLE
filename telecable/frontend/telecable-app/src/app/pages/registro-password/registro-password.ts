@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-registro-password',
@@ -93,7 +94,7 @@ export class RegistroPassword {
   passwordEstablecida: boolean = false;
   error: string = '';
 
-  private api = 'http://localhost:5000/api/auth';
+  private api = environment.apiUrl + '/auth';
 
   constructor(
     private http: HttpClient,

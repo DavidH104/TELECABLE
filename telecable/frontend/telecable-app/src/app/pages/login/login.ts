@@ -17,7 +17,7 @@ export class Login {
   usuario='';
   password='';
   contrato='';
-  isAdminMode: boolean = true;
+  isAdminMode: boolean = false;
 
   constructor(
     private auth: AuthService, 

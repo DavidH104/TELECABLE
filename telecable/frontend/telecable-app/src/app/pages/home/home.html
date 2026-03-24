@@ -1,0 +1,130 @@
+<div class="home-container">
+  <!-- Header -->
+  <div class="home-header">
+    <div class="logo-section">
+      <!-- Logo shown in navbar, tagline only here -->
+      <p class="tagline">Conectando familias</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline-primary btn-login" (click)="irALogin()">
+        <i class="bi bi-person-circle"></i> Login
+      </button>
+    </div>
+  </div>
+
+  <!-- Banner de Bienvenida -->
+  <div class="welcome-banner">
+    <div class="banner-content">
+      <h2>¡Bienvenido a Telecable!</h2>
+      <p>Los mejores paquetes de televisión, internet y telephony para ti y tu familia.</p>
+      <button class="btn btn-success btn-sm" (click)="irAPreregistro()">
+        ¡Regístrate Ahora!
+      </button>
+    </div>
+  </div>
+
+  <!-- Promociones -->
+  <section class="promociones-section" *ngIf="promociones.length > 0">
+    <h3 class="section-title">
+      <i class="bi bi-gift"></i> Promociones Activas
+    </h3>
+    <div class="promociones-grid">
+      <div class="promo-card" *ngFor="let promo of promociones">
+        <div class="promo-badge">¡OFERTA!</div>
+        <h4>{{ promo.nombre }}</h4>
+        <p class="promo-descripcion">{{ promo.descripcion }}</p>
+        <div class="promo-detalles" *ngIf="promo.descuento">
+          <span class="descuento">{{ promo.descuento }}% DESC</span>
+        </div>
+        <div class="promo-fecha" *ngIf="promo.fechaFin">
+          <small>Válido hasta: {{ promo.fechaFin | date:'dd/MM/yyyy' }}</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Paquetes -->
+  <section class="paquetes-section">
+    <h3 class="section-title">
+      <i class="bi bi-tv"></i> Nuestros Paquetes
+    </h3>
+    <div class="paquetes-grid">
+      <div class="paquete-card">
+        <h4>Básico</h4>
+        <p class="precio">$200<span>/mes</span></p>
+        <ul>
+          <li>50+ canales</li>
+          <li>Señal HD</li>
+          <li>Guía de programación</li>
+        </ul>
+        <button class="btn btn-primary btn-sm" (click)="irAPreregistro()">Lo Quiero</button>
+      </div>
+      <div class="paquete-card popular">
+        <div class="popular-badge">Más Popular</div>
+        <h4>Premium</h4>
+        <p class="precio">$299<span>/mes</span></p>
+        <ul>
+          <li>100+ canales</li>
+          <li>Señal HD y 4K</li>
+          <li>Canales exclusivos</li>
+          <li>Grabación en la nube</li>
+        </ul>
+        <button class="btn btn-success btn-sm" (click)="irAPreregistro()">Lo Quiero</button>
+      </div>
+      <div class="paquete-card">
+        <h4>Platinum</h4>
+        <p class="precio">$449<span>/mes</span></p>
+        <ul>
+          <li>150+ canales</li>
+          <li>Streaming incluido</li>
+          <li>Internet de alta velocidad</li>
+          <li>Telefonía ilimitada</li>
+        </ul>
+        <button class="btn btn-primary btn-sm" (click)="irAPreregistro()">Lo Quiero</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pre-registros Pendientes (Solo visible si hay datos) -->
+  <section class="preregistros-section" *ngIf="preRegistros.length > 0">
+    <h3 class="section-title">
+      <i class="bi bi-people"></i> Nuevos Solicitudes de Servicio
+    </h3>
+    <p class="text-muted">{{ preRegistros.length }} solicitud(es) pendiente(s) de revisión</p>
+    <div class="table-responsive">
+      <table class="table table-striped table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>Nombre</th>
+            <th>Teléfono</th>
+            <th>Paquete</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let pre of preRegistros">
+            <td>{{ pre.nombre }}</td>
+            <td>{{ pre.telefono }}</td>
+            <td>{{ pre.paquete }}</td>
+            <td>{{ pre.fecha | date:'dd/MM/yyyy' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="text-center mt-3">
+      <button class="btn btn-outline-primary" (click)="irALogin()">
+        Ver todos los pre-registros →
+      </button>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="home-footer">
+    <div class="footer-content">
+      <p>&copy; 2026 Telecable. Todos los derechos reservados.</p>
+      <p class="contacto">
+        <strong>Contacto:</strong> atención@telecable.com | (555) 123-4567
+      </p>
+    </div>
+  </footer>
+</div>

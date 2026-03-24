@@ -8,9 +8,10 @@ import { TechnicianDashboardComponent } from './pages/technician-dashboard/techn
 import { Reportes } from './pages/reportes/reportes';
 import { RegistroPassword } from './pages/registro-password/registro-password';
 import { PreregistroComponent } from './pages/preregistro/preregistro';
+import { Home } from './pages/home/home';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/login', pathMatch: 'full' },
+  { path: '', component: Home },
   { path: 'login', component: Login },
   { path: 'login-user', component: LoginUser },
   { path: 'login-technician', component: LoginTechnicianComponent },
@@ -19,5 +20,6 @@ export const routes: Routes = [
   { path: 'admin-dashboard', component: AdminDashboard },
   { path: 'user-dashboard', component: UserDashboard },
   { path: 'technician-dashboard', component: TechnicianDashboardComponent },
-  { path: 'reportes', component: Reportes }
+  { path: 'reportes', component: Reportes },
+  { path: '**', redirectTo: '' }
 ];
