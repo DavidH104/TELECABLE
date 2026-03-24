@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserService } from '../../services/user.service';
@@ -15,7 +15,9 @@ import { ConfigService } from '../../services/config.service';
   templateUrl: './admin-dashboard.html',
   styleUrls: ['./admin-dashboard.css']
 })
-export class AdminDashboard implements OnInit {
+export class AdminDashboard implements OnInit, OnDestroy {
+
+  private refreshInterval: any;
 
   // Datos crudos sin procesar
   rawData: any[] = [];
@@ -146,6 +148,20 @@ export class AdminDashboard implements OnInit {
     this.loadReportes();
     this.loadPromociones();
     this.loadPaquetes();
+    
+    // Auto-refresh cada 30 segundos
+    this.refreshInterval = setInterval(() => {
+      this.loadData();
+      this.loadReportes();
+      this.loadPromociones();
+      this.loadPaquetes();
+    }, 30000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
   }
 
   loadReportes() {
@@ -490,16 +506,54 @@ export class AdminDashboard implements OnInit {
             meses: grupos[Number(anio)].sort((a, b) => a.mes - b.mes)
           }));
         } else {
-          // Generar estructura de meses vacíos para cada año
-          this.historialPagosCliente = this.aniosConHistorial.sort((a, b) => b - a).map(anio => ({
-            ano: anio,
-            meses: Array.from({length: 12}, (_, i) => ({
-              mes: i + 1,
-              monto: cliente.precioPaquete || 200,
-              status: 'pendiente',
-              fechaPago: null
-            }))
-          }));
+          // Generar estructura de meses vacíos desde fecha de instalación
+          const fechaInstalacion = cliente.fechaInstalacion ? new Date(cliente.fechaInstalacion) : new Date();
+          const anoInicio = fechaInstalacion.getFullYear();
+          const mesInicio = fechaInstalacion.getMonth(); // 0-11 (0=Enero)
+          const anoActual = new Date().getFullYear();
+          const mesActual = new Date().getMonth();
+          
+          this.historialPagosCliente = [];
+          
+          for (let ano = anoInicio; ano <= anoActual; ano++) {
+            const esAnoInicio = ano === anoInicio;
+            const esAnoActual = ano === anoActual;
+            
+            // Determinar mes de inicio y fin para este año
+            const mesInicioAno = esAnoInicio ? mesInicio : 0;
+            const mesFinAno = esAnoActual ? mesActual : 11;
+            
+            const meses = [];
+            for (let mes = mesInicioAno; mes <= mesFinAno; mes++) {
+              // Determinar estatus
+              let status = 'pendiente';
+              if (esAnoInicio === false && esAnoActual === false) {
+                // Años completos en el medio
+                status = 'atrasado';
+              } else if (esAnoInicio && mes < mesInicio) {
+                status = 'pendiente';
+              } else if (esAnoActual && mes > mesActual) {
+                status = 'pendiente';
+              } else if (!esAnoInicio && (ano < anoActual || (ano === anoActual && mes < mesActual))) {
+                status = 'atrasado';
+              }
+              
+              meses.push({
+                mes: mes + 1,
+                monto: cliente.precioPaquete || 200,
+                status: status,
+                fechaPago: null
+              });
+            }
+            
+            this.historialPagosCliente.push({
+              ano: ano,
+              meses: meses
+            });
+          }
+          
+          // Ordenar por año descendente
+          this.historialPagosCliente.sort((a, b) => b.ano - a.ano);
         }
         this.cdr.markForCheck();
       },
@@ -650,9 +704,11 @@ export class AdminDashboard implements OnInit {
       monto = Number(monto);
     }
 
+    // Enviar tanto "año" como "ano" para compatibilidad
     this.userService.registerPayment(this.clienteHistorial._id, {
       mes: mes,
       año: año,
+      ano: año,
       monto: monto
     }).subscribe({
       next: () => {

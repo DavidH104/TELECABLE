@@ -42,9 +42,16 @@
 
 /* Banner */
 .welcome-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 4rem 2rem;
   text-align: center;
   background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+}
+
+.banner-actions {
+  margin-left: 2rem;
 }
 
 .banner-content h2 {

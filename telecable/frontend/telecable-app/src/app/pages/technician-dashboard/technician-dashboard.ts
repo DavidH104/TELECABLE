@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,7 +10,9 @@ import { TechnicianService } from '../../services/technician.service';
   imports: [CommonModule, FormsModule],
   templateUrl: './technician-dashboard.html'
 })
-export class TechnicianDashboardComponent implements OnInit {
+export class TechnicianDashboardComponent implements OnInit, OnDestroy {
+
+  private refreshInterval: any;
   technician: any = null;
   loading: boolean = true;
   vistaActual: string = 'asignados';
@@ -46,6 +48,17 @@ export class TechnicianDashboardComponent implements OnInit {
     
     this.technician = stored;
     this.cargarReportes();
+    
+    // Auto-refresh cada 30 segundos
+    this.refreshInterval = setInterval(() => {
+      this.cargarReportes();
+    }, 30000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
   }
 
   cargarReportes(): void {

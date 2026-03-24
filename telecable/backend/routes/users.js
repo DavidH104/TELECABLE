@@ -199,9 +199,12 @@ router.put("/:id/datos", async (req, res) => {
 // PUT - Registrar pago en historial de pagos
 router.put("/:id/pago", async (req, res) => {
   try {
-    const { mes, año, monto } = req.body;
+    const { mes, año, ano, monto } = req.body;
     
-    if (!mes || !año || !monto) {
+    // Aceptar tanto "año" como "ano" (sin acento)
+    const añoFinal = año || ano;
+    
+    if (!mes || !añoFinal || !monto) {
       return res.status(400).json({ error: "Mes, año y monto son requeridos" });
     }
 
@@ -217,16 +220,16 @@ router.put("/:id/pago", async (req, res) => {
 
     // Buscar si ya existe un registro para ese mes/año
     const existingIndex = user.historialPagos.findIndex(
-      p => p.mes === mes && p.año === año
+      p => p.mes === mes && p.año === añoFinal
     );
 
     const nuevoPago = {
       mes: mes,
-      año: año,
+      año: añoFinal,
       monto: monto,
       fechaPago: new Date(),
       status: 'pagado',
-      fechaLimite: new Date(año, mes - 1, 10) // 10 de cada mes
+      fechaLimite: new Date(añoFinal, mes - 1, 10) // 10 de cada mes
     };
 
     if (existingIndex >= 0) {

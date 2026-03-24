@@ -2,7 +2,7 @@
 
 .dashboard-header {
   background: linear-gradient(135deg, var(--azul-oscuro) 0%, var(--azul-medio) 100%);
-  color: white;
+  color: rgba(77, 163, 255, 0.922);
   padding: 20px;
   border-radius: 16px;
   margin-bottom: 24px;

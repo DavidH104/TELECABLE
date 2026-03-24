@@ -220,7 +220,7 @@
     <div class="card p-4 mb-4">
       <h3 class="mb-4">Historial de Pagos</h3>
       <div class="table-responsive">
-        <table class="table table-bordered table-striped">
+        <table class="table table-bordered table-striped" style="background: white; color: #333;">
           <thead class="table-success">
             <tr>
               <th>Cliente</th>
@@ -932,7 +932,7 @@
           </div>
         </div>
         <div *ngIf="anioSeleccionado > 0">
-          <table class="table table-bordered table-striped">
+          <table class="table table-bordered table-striped" style="background: white; color: #333;">
             <thead class="table-dark">
               <tr><th>Mes</th><th>Monto</th><th>Fecha</th><th>Estatus</th><th>Acciones</th></tr>
             </thead>
@@ -951,8 +951,13 @@
                   </select>
                 </td>
                 <td>
-                  <button *ngIf="p.status === 'pagado'" class="btn btn-sm btn-danger" (click)="eliminarPago(p, i)">Eliminar</button>
-                  <button *ngIf="p.status !== 'pagado'" class="btn btn-sm btn-success" (click)="registrarPago(p.mes, p.ano || p['año'], p.monto)">Marcar Pagado</button>
+                  <div class="d-flex gap-1">
+                    <button *ngIf="p.status === 'pagado'" class="btn btn-sm btn-primary" (click)="generarRecibo(p)" title="Generar Recibo">
+                      <i class="bi bi-receipt"></i> Recibo
+                    </button>
+                    <button *ngIf="p.status === 'pagado'" class="btn btn-sm btn-danger" (click)="eliminarPago(p, i)">Eliminar</button>
+                    <button *ngIf="p.status !== 'pagado'" class="btn btn-sm btn-success" (click)="registrarPago(p.mes, p.ano || p['año'], p.monto)">Marcar Pagado</button>
+                  </div>
                 </td>
               </tr>
             </tbody>

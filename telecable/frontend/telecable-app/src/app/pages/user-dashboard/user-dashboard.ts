@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -14,7 +14,9 @@ import { environment } from '../../../environments/environment';
   templateUrl: './user-dashboard.html',
   styleUrls: ['./user-dashboard.css']
 })
-export class UserDashboard implements OnInit {
+export class UserDashboard implements OnInit, OnDestroy {
+
+  private refreshInterval: any;
 
   user: any = null;
   nuevoReporte: string = '';
@@ -46,6 +48,22 @@ export class UserDashboard implements OnInit {
       return;
     }
     
+    // Cargar datos del usuario
+    this.loadUserData();
+    
+    // Auto-refresh cada 30 segundos
+    this.refreshInterval = setInterval(() => {
+      this.loadUserData();
+    }, 30000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+  }
+
+  loadUserData(): void {
     // Los datos ya vienen del login, pero recargamos para asegurar datos actualizados
     this.userService.getUserById(this.user._id).subscribe({
       next: (userData: any) => {

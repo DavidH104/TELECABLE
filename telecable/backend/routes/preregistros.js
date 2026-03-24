@@ -87,6 +87,8 @@ router.post('/:id/aprobar', async (req, res) => {
       direccion: preregistro.direccion,
       password: hashedPassword,
       estatus: 'Activo',
+      paquete: preregistro.paquete || 'basico',
+      precioPaquete: preregistro.precio || 200,
       solicitudRegistro: {
         tipo: 'preregistro',
         estado: 'aprobado',

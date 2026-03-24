@@ -109,7 +109,7 @@ export class UserService {
   }
 
   /** Registrar pago en historial */
-  registerPayment(id: string, data: { mes: number; año: number; monto: number }): Observable<any> {
+  registerPayment(id: string, data: { mes: number; año: number; ano?: number; monto: number }): Observable<any> {
     return this.http.put<any>(`${this.api}/${id}/pago`, data);
   }
 
