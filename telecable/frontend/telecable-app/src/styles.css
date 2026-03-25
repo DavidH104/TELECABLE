@@ -395,15 +395,15 @@ a:hover {
 /* ===== COLORES ORANGE TELECABLE ===== */
 
 .text-orange {
-  color: #FF6B35 !important;
+  color: #1E6FB9 !important;
 }
 
 .bg-orange {
-  background-color: #FF6B35 !important;
+  background-color: #1E6FB9 !important;
 }
 
 .btn-orange {
-  background: linear-gradient(135deg, #FF6B35 0%, #E85A24 100%);
+  background: linear-gradient(135deg, #1E6FB9 0%, #0B3C6D 100%);
   border: none;
   color: white;
   border-radius: 10px;
@@ -411,9 +411,9 @@ a:hover {
 }
 
 .btn-orange:hover {
-  background: linear-gradient(135deg, #E85A24 0%, #FF6B35 100%);
+  background: linear-gradient(135deg, #0B3C6D 0%, #1E6FB9 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+  box-shadow: 0 4px 15px rgba(30, 111, 185, 0.4);
   color: white;
 }
 
