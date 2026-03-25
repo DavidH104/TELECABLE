@@ -494,7 +494,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
           // Agrupar pagos por año
           const grupos: { [key: number]: any[] } = {};
           for (const pago of cliente.historialPagos) {
-            const anio = pago.ano || new Date().getFullYear();
+            const anio = pago.año || new Date().getFullYear();
             if (!grupos[anio]) {
               grupos[anio] = [];
             }
@@ -672,22 +672,63 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   cargarHistorialPagos() {
     if (!this.clienteHistorial) return;
-
-    const anioParam = this.anioSeleccionado > 0 ? this.anioSeleccionado : undefined;
-    this.userService.getPaymentHistoryByYear(this.clienteHistorial._id, anioParam).subscribe({
-      next: (res) => {
-        this.historialPagosCliente = res.historial;
-        // Extraer años únicos si es vista grouped
-        if (this.anioSeleccionado === 0 && Array.isArray(this.historialPagosCliente)) {
-          this.aniosConHistorial = this.historialPagosCliente.map((h: any) => h.anio);
+    
+    // Si hay un año seleccionado, filtrar localmente
+    if (this.anioSeleccionado > 0) {
+      // Obtener datos frescos del usuario
+      this.userService.getUserById(this.clienteHistorial._id).subscribe({
+        next: (cliente) => {
+          this.clienteHistorial = cliente;
+          if (cliente.historialPagos && cliente.historialPagos.length > 0) {
+            // Filtrar pagos del año seleccionado
+            const pagosDelAnio = cliente.historialPagos.filter((p: any) => 
+              (p.año === this.anioSeleccionado) || (p.ano === this.anioSeleccionado)
+            );
+            // Ordenar por mes
+            this.historialPagosCliente = pagosDelAnio.sort((a: any, b: any) => a.mes - b.mes);
+          } else {
+            this.historialPagosCliente = [];
+          }
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          console.error('Error al cargar historial:', err);
+          alert('Error al cargar historial de pagos');
         }
-        this.cdr.markForCheck();
-      },
-      error: (err) => {
-        console.error('Error al cargar historial:', err);
-        alert('Error al cargar historial de pagos');
-      }
-    });
+      });
+    } else {
+      // Cargar todos los pagos - usar datos locales ya cargados
+      this.userService.getUserById(this.clienteHistorial._id).subscribe({
+        next: (cliente) => {
+          this.clienteHistorial = cliente;
+          if (cliente.historialPagos && cliente.historialPagos.length > 0) {
+            // Agrupar pagos por año
+            const grupos: { [key: number]: any[] } = {};
+            for (const pago of cliente.historialPagos) {
+              const anio = pago.año || pago.ano || new Date().getFullYear();
+              if (!grupos[anio]) {
+                grupos[anio] = [];
+              }
+              grupos[anio].push(pago);
+            }
+            // Convertir a array ordenado por año descendente
+            this.historialPagosCliente = Object.keys(grupos)
+              .sort((a, b) => Number(b) - Number(a))
+              .map(anio => ({
+                ano: Number(anio),
+                meses: grupos[Number(anio)].sort((a: any, b: any) => a.mes - b.mes)
+              }));
+          } else {
+            this.historialPagosCliente = [];
+          }
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          console.error('Error al cargar historial:', err);
+          alert('Error al cargar historial de pagos');
+        }
+      });
+    }
   }
 
   filtrarPorAnio() {
@@ -728,14 +769,32 @@ export class AdminDashboard implements OnInit, OnDestroy {
       // Si se marca como pagado, registrar el pago
       this.registrarPago(pago.mes, pago.ano || pago.año, pago.monto);
     } else if (pago.status !== 'pagado' && pago.fechaPago) {
-      // Si se cambia a pendiente o atrasado, eliminar el pago
-      const index = this.clienteHistorial.historialPagos?.findIndex((p: any) => 
+      // Si se cambia a pendiente o atrasado, necesitamos eliminar el pago
+      // Primero, encontrar el indice del pago en el historial
+      const historial = this.clienteHistorial.historialPagos || [];
+      const index = historial.findIndex((p: any) => 
         p.mes === pago.mes && (p.ano === pago.ano || p.año === pago.año)
       );
-      if (index !== undefined && index >= 0) {
-        this.eliminarPago(pago, index);
+      
+      if (index >= 0) {
+        this.userService.eliminarPago(this.clienteHistorial._id, index).subscribe({
+          next: () => {
+            // Recargar el historial
+            this.cargarHistorialPagos();
+            this.recargarDatos();
+          },
+          error: (err) => {
+            console.error('Error al cambiar estatus:', err);
+            alert('Error al cambiar estatus del pago');
+          }
+        });
       }
+    } else {
+      // Si ya estaba pagado y se cambia a pendiente sin fechaPago, solo recargar
+      this.cargarHistorialPagos();
     }
+    // Forzar actualizacion de la vista
+    this.cdr.markForCheck();
   }
 
   guardarCambiosCliente() {
