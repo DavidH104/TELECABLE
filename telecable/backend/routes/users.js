@@ -4,8 +4,8 @@ const User = require("../models/user")
 
 router.get("/",async(req,res)=>{
 
-const users = await User.find()
-res.json(users)
+  const users = await User.find()
+  res.json(users)
 
 })
 
