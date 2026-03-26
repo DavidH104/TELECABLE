@@ -17,11 +17,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const dbURI = 'mongodb://localhost:27017/telecable';
+const dbURI = 'mongodb+srv://telecable:TelecableSanbartolo2026@cluster0.qyxpbok.mongodb.net/telecable?retryWrites=true&w=majority';
 
 mongoose.connect(dbURI)
   .then(async () => {
-    console.log('MongoDB Connected...');
+    console.log('MongoDB Connected to:', mongoose.connection.db.databaseName);
     
     const adminExists = await Admin.findOne({ usuario: 'admin' });
     if (!adminExists) {
