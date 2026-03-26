@@ -33,13 +33,13 @@
     <div class="promociones-grid">
       <div class="promo-card" *ngFor="let promo of promociones">
         <div class="promo-badge">¡OFERTA!</div>
-        <h4>{{ promo.nombre }}</h4>
+        <h4>{{ promo.titulo || promo.nombre }}</h4>
         <p class="promo-descripcion">{{ promo.descripcion }}</p>
         <div class="promo-detalles" *ngIf="promo.descuento">
           <span class="descuento">{{ promo.descuento }}% DESC</span>
         </div>
-        <div class="promo-fecha" *ngIf="promo.fechaFin">
-          <small>Válido hasta: {{ promo.fechaFin | date:'dd/MM/yyyy' }}</small>
+        <div class="promo-fecha" *ngIf="promo.validoHasta">
+          <small>Válido hasta: {{ promo.validoHasta | date:'dd/MM/yyyy' }}</small>
         </div>
       </div>
     </div>

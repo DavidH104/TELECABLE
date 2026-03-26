@@ -190,7 +190,10 @@
             <tr>
               <th>Contrato</th>
               <th>Nombre</th>
+              <th>Paquete</th>
+              <th>Precio</th>
               <th>Pagos</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -199,10 +202,15 @@
               <td>
                 <a href="javascript:void(0)" (click)="abrirModalDetalles(u)" class="text-primary text-decoration-none fw-bold">{{u.nombre}}</a>
               </td>
+              <td>{{u.paquete || '-'}}</td>
+              <td>${{u.precioPaquete || '-'}}</td>
               <td>
                 <button class="btn btn-sm btn-info" (click)="abrirModalHistorialPagos(u)" title="Ver Historial de Pagos">
                   <i class="bi bi-calendar-check"></i> Pagos
                 </button>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-warning" (click)="abrirModalEditarCliente(u)">Editar</button>
               </td>
             </tr>
             <tr *ngIf="usersFiltrados.length === 0">

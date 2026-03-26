@@ -56,6 +56,7 @@
               <div class="col-md-6">
                 <p><b>Numero de Cliente:</b><br> {{user.numero}}</p>
                 <p><b>Localidad/Direccion:</b><br> {{user.localidad}}</p>
+                <p><b>Plan Actual:</b><br> {{user.paquete || 'No definido'}} - ${{user.precioPaquete || '0'}}/mes</p>
               </div>
               <div class="col-md-6">
                 <p><b>Estatus del Servicio:</b><br>

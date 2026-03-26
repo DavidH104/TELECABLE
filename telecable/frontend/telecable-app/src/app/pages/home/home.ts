@@ -41,9 +41,9 @@ export class Home implements OnInit {
         if (config && config.promociones) {
           const ahora = new Date();
           this.promociones = config.promociones.filter((p: any) => {
-            if (!p.activa) return false;
-            if (p.fechaFin) {
-              const fechaFin = new Date(p.fechaFin);
+            if (!p.activo) return false;
+            if (p.validoHasta) {
+              const fechaFin = new Date(p.validoHasta);
               return fechaFin >= ahora;
             }
             return true;
