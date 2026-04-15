@@ -30,7 +30,7 @@
       </button>
     </div>
     <div class="col-md-2">
-      <button class="btn w-100" [class.btn-danger]="vistaActual === 'asignar'" [class.btn-outline-danger]="vistaActual !== 'asignar'" (click)="vistaActual = 'asignar'; loadReportesParaAsignar()">
+      <button class="btn w-100" [class.btn-danger]="vistaActual === 'asignar'" [class.btn-outline-danger]="vistaActual !== 'asignar'" (click)="vistaActual = 'asignar'; loadReportesParaAsignar(); loadTechnicians()">
         🎯 Asignar
       </button>
     </div>
@@ -274,7 +274,7 @@
               <td>{{ reporte.mensaje }}</td>
               <td>{{ reporte.fecha | date:'dd/MM/yyyy' }}</td>
               <td>
-                <span class="badge" [class.bg-success]="reporte.estatus === 'atendido'" [class.bg-warning]="reporte.estatus === 'pendiente'">
+                <span class="badge" [class.bg-success]="reporte.estatus === 'atendido'" [class.bg-danger]="reporte.estatus === 'pendiente'">
                   {{ reporte.estatus === 'atendido' ? 'Atendido' : 'Pendiente' }}
                 </span>
               </td>
@@ -456,7 +456,7 @@
                   <label class="form-label">Técnico:</label>
                   <select class="form-select" [(ngModel)]="tecnicoSeleccionado">
                     <option value="">Seleccionar técnico...</option>
-                    <option *ngFor="let tech of tecnicos" [value]="tech._id" [disabled]="!tech.activo">
+                    <option *ngFor="let tech of tecnicos" [value]="tech._id">
                       {{tech.nombre}} - {{tech.especialidad}} {{!tech.activo ? '(Inactivo)' : ''}}
                     </option>
                   </select>
