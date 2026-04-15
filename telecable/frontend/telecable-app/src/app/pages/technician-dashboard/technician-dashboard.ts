@@ -1,14 +1,15 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
-import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TechnicianService } from '../../services/technician.service';
 
 @Component({
   selector: 'app-technician-dashboard',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './technician-dashboard.html'
+  templateUrl: './technician-dashboard.html',
+  styleUrls: ['./technician-dashboard.css']
 })
 export class TechnicianDashboardComponent implements OnInit, OnDestroy {
 

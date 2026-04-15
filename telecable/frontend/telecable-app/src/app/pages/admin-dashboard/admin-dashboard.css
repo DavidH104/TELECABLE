@@ -237,4 +237,85 @@
     padding: 8px 15px;
     font-size: 0.9rem;
   }
+
+  /* Botones de vista en fila */
+  .row.mb-4 .col-md-2 {
+    margin-bottom: 8px;
+  }
+
+  /* Tablas responsive */
+  .table-responsive {
+    border-radius: 10px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table {
+    min-width: 600px; /* Ancho mínimo para evitar compresión excesiva */
+    font-size: 0.8rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 6px 8px;
+    white-space: nowrap;
+  }
+
+  /* Formularios en móviles */
+  .row .col-md-4,
+  .row .col-md-3,
+  .row .col-md-2 {
+    margin-bottom: 10px;
+  }
+
+  /* Cards en móviles */
+  .card {
+    margin-bottom: 15px;
+  }
+
+  /* Botones de grupo en móviles */
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .btn-group .btn {
+    width: 100%;
+    border-radius: 6px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .container-fluid {
+    padding: 10px;
+  }
+
+  .container-fluid h1 {
+    font-size: 1.2rem;
+    border-bottom: 2px solid #00d4ff;
+  }
+
+  /* Ajustar botones de vista para móviles pequeños */
+  .btn.w-100 {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    margin-bottom: 5px;
+  }
+
+  /* Formularios más compactos */
+  .form-control, .form-select {
+    font-size: 16px; /* Prevenir zoom en iOS */
+    padding: 10px 12px;
+  }
+
+  /* Tablas aún más pequeñas */
+  .table {
+    font-size: 0.75rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 4px 6px;
+  }
 }
