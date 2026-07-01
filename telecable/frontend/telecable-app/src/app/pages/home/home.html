@@ -46,44 +46,27 @@
   </section>
 
   <!-- Paquetes -->
-  <section class="paquetes-section">
+  <section class="paquetes-section" *ngIf="paquetes.length > 0">
     <h3 class="section-title">
       <i class="bi bi-tv"></i> Nuestros Paquetes
     </h3>
     <div class="paquetes-grid">
-      <div class="paquete-card">
-        <h4>Básico</h4>
-        <p class="precio">$200<span>/mes</span></p>
+      <div class="paquete-card" *ngFor="let paquete of paquetes" [ngClass]="{ 'popular': paquete.popular }">
+        <div class="popular-badge" *ngIf="paquete.popular">Más Popular</div>
+        <h4>{{ paquete.nombre }}</h4>
+        <p class="precio">${{ paquete.precio }}<span>/mes</span></p>
         <ul>
-          <li>50+ canales</li>
-          <li>Señal HD</li>
-          <li>Guía de programación</li>
+          <li>{{ paquete.velocidad || 'Internet mejorado' }}</li>
+          <li>{{ paquete.canales ? paquete.canales + ' canales' : 'Canales incluidos' }}</li>
+          <li>{{ paquete.descripcion || 'Servicio con TV e Internet' }}</li>
         </ul>
         <button class="btn btn-primary btn-sm" (click)="irAPreregistro()">Lo Quiero</button>
       </div>
-      <div class="paquete-card popular">
-        <div class="popular-badge">Más Popular</div>
-        <h4>Premium</h4>
-        <p class="precio">$299<span>/mes</span></p>
-        <ul>
-          <li>100+ canales</li>
-          <li>Señal HD y 4K</li>
-          <li>Canales exclusivos</li>
-          <li>Grabación en la nube</li>
-        </ul>
-        <button class="btn btn-success btn-sm" (click)="irAPreregistro()">Lo Quiero</button>
-      </div>
-      <div class="paquete-card">
-        <h4>Platinum</h4>
-        <p class="precio">$449<span>/mes</span></p>
-        <ul>
-          <li>150+ canales</li>
-          <li>Streaming incluido</li>
-          <li>Internet de alta velocidad</li>
-          <li>Telefonía ilimitada</li>
-        </ul>
-        <button class="btn btn-primary btn-sm" (click)="irAPreregistro()">Lo Quiero</button>
-      </div>
+    </div>
+  </section>
+  <section class="paquetes-section" *ngIf="paquetes.length === 0">
+    <div class="alert alert-secondary text-center">
+      No hay paquetes configurados actualmente. Por favor solicita a un administrador que agregue paquetes.
     </div>
   </section>
 

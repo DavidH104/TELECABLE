@@ -1,11 +1,10 @@
 const mongoose = require('mongoose');
-
-const dbURI = 'mongodb+srv://telecable:TelecableSanbartolo2026@cluster0.qyxpbok.mongodb.net/telecableDB?retryWrites=true&w=majority';
+const { connectDB } = require('./db');
 
 async function checkAll() {
   try {
-    await mongoose.connect(dbURI);
-    console.log('Conectado a la base de datos: telecableDB\n');
+    await connectDB();
+    console.log('Conectado a la base de datos local\n');
     
     const db = mongoose.connection.db;
     

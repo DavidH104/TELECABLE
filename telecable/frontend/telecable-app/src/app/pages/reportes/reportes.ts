@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-reportes',
@@ -19,7 +20,7 @@ export class Reportes {
   enviarReporte() {
 
     this.http.put(
-      "http://localhost:3000/api/reportes/" + this.userId,
+      `${environment.apiUrl}/reportes/${this.userId}`,
       { mensaje: this.mensaje }
     ).subscribe(() => {
 

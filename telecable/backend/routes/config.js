@@ -43,8 +43,8 @@ router.put('/', async (req, res) => {
   try {
     const config = await Config.findOneAndUpdate(
       { clave: 'system' },
-      req.body,
-      { new: true, upsert: true }
+      { $set: { ...req.body, clave: 'system' } },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
     );
     res.json(config);
   } catch (error) {

@@ -1,6 +1,6 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
-
-const dbURI = 'mongodb+srv://telecable:TelecableSanbartolo2026@cluster0.qyxpbok.mongodb.net/telecableDB?retryWrites=true&w=majority';
+const { connectDB } = require('./db');
 
 const userSchema = new mongoose.Schema({
   numero: { type: String, required: true, unique: true },
@@ -132,8 +132,8 @@ const users = [
 
 async function seed() {
   try {
-    await mongoose.connect(dbURI);
-    console.log('Conectado a MongoDB Atlas...');
+    await connectDB();
+    console.log('Conectado a MongoDB local...');
 
     // Verificar si ya hay usuarios
     const count = await User.countDocuments();

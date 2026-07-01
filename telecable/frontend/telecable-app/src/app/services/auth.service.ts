@@ -3,13 +3,14 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { isPlatformBrowser } from '@angular/common';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
 
-  private api = 'http://localhost:5000/api/auth';
+  private api = `${environment.apiUrl}/auth`;
   private currentUserKey = 'currentUser';
   private isAdminKey = 'isAdmin';
 
